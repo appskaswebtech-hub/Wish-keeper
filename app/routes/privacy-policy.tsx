@@ -1,0 +1,237 @@
+import type { LoaderFunctionArgs } from "react-router";
+
+const SUPPORT_EMAIL = "apps.kaswebtech@gmail.com";
+
+export const loader = async (_: LoaderFunctionArgs) => {
+  const today = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Privacy Policy – WishKeeper</title>
+<meta name="description" content="Privacy Policy for WishKeeper, the Shopify wishlist app by KAS Web Tech Solutions."/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#b8922a;--gold-light:#d4a843;--gold-pale:rgba(184,146,42,0.1);
+  --bg:#0d0c0a;--bg2:#13110e;--surface:#1a1714;
+  --border:rgba(255,255,255,0.08);--text:#f0ece4;--muted:#8a8278;--muted2:#b0a89e;
+  --radius:16px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.7}
+
+/* ── Navbar ── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:20px 48px;display:flex;align-items:center;justify-content:space-between;transition:all .3s ease;background:rgba(13,12,10,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--text);text-decoration:none}
+.nav-logo-icon{width:32px;height:32px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-back{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;transition:color .2s}
+.nav-back:hover{color:var(--text)}
+.nav-cta{display:flex;align-items:center;gap:6px;background:var(--gold);color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;transition:background .2s,transform .15s}
+.nav-cta:hover{background:var(--gold-light);transform:translateY(-1px)}
+
+/* ── Hero ── */
+.pp-hero{padding:120px 48px 64px;text-align:center;position:relative;overflow:hidden}
+.pp-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 20%,rgba(184,146,42,.1) 0%,transparent 70%);pointer-events:none}
+.pp-eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);background:var(--gold-pale);border:1px solid rgba(184,146,42,.22);padding:5px 14px;border-radius:100px;margin-bottom:20px}
+.pp-title{font-family:'Playfair Display',serif;font-size:clamp(32px,5vw,56px);font-weight:700;color:var(--text);margin-bottom:16px}
+.pp-title em{font-style:italic;color:var(--gold)}
+.pp-updated{font-size:13px;color:var(--muted);margin-bottom:0}
+
+/* ── Content ── */
+.pp-content{max-width:760px;margin:0 auto;padding:56px 48px 100px}
+.pp-section{margin-bottom:48px;padding:32px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.pp-section:last-child{margin-bottom:0}
+.pp-section h2{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--text);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.pp-section h2 span{color:var(--gold)}
+.pp-section p{font-size:14px;color:var(--muted2);margin-bottom:14px;line-height:1.8}
+.pp-section p:last-child{margin-bottom:0}
+.pp-section ul{list-style:none;padding:0;margin:14px 0}
+.pp-section ul li{font-size:14px;color:var(--muted2);padding:6px 0 6px 22px;position:relative;line-height:1.7}
+.pp-section ul li::before{content:'';position:absolute;left:0;top:13px;width:6px;height:6px;border-radius:50%;background:var(--gold);opacity:.7}
+.pp-section a{color:var(--gold);text-decoration:none}
+.pp-section a:hover{text-decoration:underline}
+
+/* ── Contact card ── */
+.contact-card{display:flex;align-items:center;gap:16px;padding:20px;background:var(--gold-pale);border:1px solid rgba(184,146,42,.22);border-radius:12px;margin-top:16px}
+.contact-card-icon{width:40px;height:40px;border-radius:10px;background:rgba(184,146,42,.15);border:1px solid rgba(184,146,42,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.contact-card-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.contact-card-value{font-size:14px;font-weight:500;color:var(--text)}
+.contact-card-value a{color:var(--gold);text-decoration:none}
+.contact-card-value a:hover{text-decoration:underline}
+
+/* ── Footer ── */
+.footer{padding:36px 48px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.footer-logo{display:flex;align-items:center;gap:8px;font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--text);text-decoration:none}
+.footer-links{display:flex;gap:24px}
+.footer-links a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:var(--text)}
+.footer-copy{font-size:12px;color:var(--muted)}
+
+@media(max-width:768px){
+  .nav{padding:14px 20px}.nav-logo span{display:none}
+  .pp-hero{padding:100px 20px 48px}
+  .pp-content{padding:40px 20px 80px}
+  .pp-section{padding:24px 20px}
+  .footer{padding:28px 20px;flex-direction:column;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="nav">
+  <a href="/home" class="nav-logo">
+    <div class="nav-logo-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.08C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z"/></svg>
+    </div>
+    <span>WishKeeper</span>
+  </a>
+  <a href="/home" class="nav-back">
+    &larr; Back to Home
+  </a>
+  <a href="mailto:${SUPPORT_EMAIL}" class="nav-cta">Contact Support</a>
+</nav>
+
+<!-- Hero -->
+<div class="pp-hero">
+  <div class="pp-eyebrow">Legal</div>
+  <h1 class="pp-title">Privacy <em>Policy</em></h1>
+  <p class="pp-updated">Last updated: ${today}</p>
+</div>
+
+<!-- Content -->
+<div class="pp-content">
+
+  <div class="pp-section">
+    <h2><span>1.</span> Introduction</h2>
+    <p>Welcome to WishKeeper (&ldquo;the App&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;), a Shopify application developed and operated by KAS Web Tech Solutions. This Privacy Policy explains how we collect, use, disclose, and protect information when you install and use the WishKeeper app on your Shopify store.</p>
+    <p>By installing or using WishKeeper, you agree to the collection and use of information as described in this policy. If you do not agree, please uninstall the app from your Shopify store.</p>
+  </div>
+
+  <div class="pp-section">
+    <h2><span>2.</span> Information We Collect</h2>
+    <p>We collect the following types of information in order to provide and improve our service:</p>
+    <ul>
+      <li><strong>Store Information:</strong> Your Shopify store domain (e.g. your-store.myshopify.com), installed date, and app access token required to communicate with the Shopify Admin API.</li>
+      <li><strong>Customer Identifiers:</strong> Shopify customer IDs (numeric) and anonymous guest identifiers stored in the browser&rsquo;s localStorage. We do not collect names, email addresses, or personal details of your customers.</li>
+      <li><strong>Wishlist Data:</strong> Product IDs and variant IDs that customers save to their wishlist within your store.</li>
+      <li><strong>Session Data:</strong> OAuth session tokens used to authenticate your merchant account with Shopify.</li>
+      <li><strong>Store Settings:</strong> Configuration preferences you set within the app (e.g. colours, grid layout, icon style).</li>
+    </ul>
+  </div>
+
+  <div class="pp-section">
+    <h2><span>3.</span> How We Use Your Information</h2>
+    <p>The information we collect is used exclusively to provide the WishKeeper service:</p>
+    <ul>
+      <li>To enable wishlist functionality (saving, retrieving, and managing wishlisted products) on your storefront.</li>
+      <li>To display analytics in your merchant dashboard (e.g. most-wishlisted products, wishlist counts).</li>
+      <li>To maintain your store&rsquo;s customisation settings within the app.</li>
+      <li>To authenticate and maintain a secure session between the app and your Shopify store.</li>
+      <li>To auto-create a Shopify Storefront Access Token used to fetch product data on your behalf.</li>
+    </ul>
+    <p>We do not sell, rent, or share your data or your customers&rsquo; data with any third parties for marketing or advertising purposes.</p>
+  </div>
+
+  <div class="pp-section">
+    <h2><span>4.</span> Data Storage &amp; Security</h2>
+    <p>All data collected by WishKeeper is stored in a secured database hosted on our servers. We implement industry-standard security measures including:</p>
+    <ul>
+      <li>HTTPS/TLS encryption for all data in transit.</li>
+      <li>Access controls limiting who can access the production database.</li>
+      <li>Regular security reviews of our application code and infrastructure.</li>
+    </ul>
+    <p>While we take all reasonable precautions to protect your data, no method of transmission over the internet is 100% secure. We cannot guarantee absolute security.</p>
+  </div>
+
+  <div class="pp-section">
+    <h2><span>5.</span> Data Retention</h2>
+    <p>We retain your store&rsquo;s data for as long as WishKeeper is installed on your Shopify store. When you uninstall the app:</p>
+    <ul>
+      <li>Your store record is marked as inactive.</li>
+      <li>OAuth session tokens are invalidated by Shopify automatically.</li>
+      <li>Wishlist data associated with your store may be retained for up to 30 days before being permanently deleted, unless you request immediate deletion.</li>
+    </ul>
+    <p>To request immediate deletion of all your store&rsquo;s data, please contact us at <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a>.</p>
+  </div>
+
+  <div class="pp-section">
+    <h2><span>6.</span> Third-Party Services</h2>
+    <p>WishKeeper integrates with the following third-party services:</p>
+    <ul>
+      <li><strong>Shopify:</strong> We use the Shopify Admin API and Storefront API to authenticate merchants and fetch product data. Shopify&rsquo;s own <a href="https://www.shopify.com/legal/privacy" target="_blank" rel="noopener">Privacy Policy</a> applies to data processed through their platform.</li>
+      <li><strong>Cloudflare / Tunnel:</strong> Used during development for secure tunnelling. Not used in production.</li>
+    </ul>
+    <p>We do not use any third-party analytics, advertising, or tracking services within the WishKeeper app.</p>
+  </div>
+
+  <div class="pp-section">
+    <h2><span>7.</span> Cookies &amp; Local Storage</h2>
+    <p>WishKeeper uses the browser&rsquo;s <code style="background:rgba(255,255,255,.06);padding:2px 6px;border-radius:4px;font-size:13px">localStorage</code> on your customers&rsquo; devices to store an anonymous guest identifier. This allows guest shoppers (who are not logged in) to retain their wishlist across sessions.</p>
+    <p>No tracking cookies are placed on your customers&rsquo; devices by WishKeeper. When a guest logs in to their Shopify account, their guest wishlist is merged with their account wishlist and the guest identifier is no longer needed.</p>
+  </div>
+
+  <div class="pp-section">
+    <h2><span>8.</span> Your Rights</h2>
+    <p>As a merchant using WishKeeper, you have the right to:</p>
+    <ul>
+      <li>Access the data we hold about your store at any time by contacting us.</li>
+      <li>Request correction of any inaccurate data.</li>
+      <li>Request deletion of all your store&rsquo;s data by uninstalling the app and contacting us.</li>
+      <li>Restrict or object to certain types of data processing.</li>
+    </ul>
+    <p>Your customers also have the right to have their wishlist data deleted. You can action this on their behalf or direct them to contact us.</p>
+  </div>
+
+  <div class="pp-section">
+    <h2><span>9.</span> Children&rsquo;s Privacy</h2>
+    <p>WishKeeper is not directed at children under the age of 13. We do not knowingly collect personal information from children. If you believe a child has provided personal information through your store&rsquo;s use of our app, please contact us so we can delete it.</p>
+  </div>
+
+  <div class="pp-section">
+    <h2><span>10.</span> Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. We will notify you of any significant changes by updating the &ldquo;Last updated&rdquo; date at the top of this page. We encourage you to review this policy periodically.</p>
+    <p>Continued use of the WishKeeper app after changes are made constitutes acceptance of the updated policy.</p>
+  </div>
+
+  <div class="pp-section">
+    <h2><span>11.</span> Contact Us</h2>
+    <p>If you have any questions, concerns, or requests regarding this Privacy Policy or your data, please reach out to us:</p>
+    <div class="contact-card">
+      <div class="contact-card-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <div>
+        <div class="contact-card-label">Support Email</div>
+        <div class="contact-card-value"><a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a></div>
+      </div>
+    </div>
+    <p style="margin-top:16px">We aim to respond to all enquiries within 2 business days.</p>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <a href="/home" class="footer-logo">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="#b8922a"><path d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.08C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z"/></svg>
+    WishKeeper
+  </a>
+  <div class="footer-links">
+    <a href="/home">Home</a>
+    <a href="/privacy-policy">Privacy Policy</a>
+    <a href="mailto:${SUPPORT_EMAIL}">Support</a>
+  </div>
+  <div class="footer-copy">&copy; 2026 KAS Web Tech Solutions. All rights reserved.</div>
+</footer>
+
+</body>
+</html>`;
+
+  return new Response(html, {
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+};

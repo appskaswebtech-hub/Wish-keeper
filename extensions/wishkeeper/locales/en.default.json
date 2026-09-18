@@ -1,0 +1,15 @@
+{
+  "wishlist": {
+    "add": "Add to Wishlist",
+    "remove": "Remove from Wishlist",
+    "added": "In Wishlist",
+    "addedToast": "Added to Wishlist",
+    "removedToast": "Removed from Wishlist",
+    "subscribeTooltip": "Subscribe to WishKeeper to enable wishlists",
+    "ariaLabel": "Wishlist"
+  },
+  "ratings": {
+    "stars": { "label": "Rating" },
+    "home": { "recommendationText": "Recommended" }
+  }
+}

@@ -1,0 +1,46 @@
+.wk-loader {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wk-loader-letter {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  font-size: 26px;
+  color: #b8922a;
+  opacity: 0.85;
+}
+.wk-loader-ring {
+  position: absolute;
+  inset: 0;
+  animation: wk-loader-orbit 1s linear infinite;
+}
+.wk-loader-ring::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: #b8922a;
+  box-shadow: 0 0 8px rgba(184, 146, 42, 0.55);
+}
+@keyframes wk-loader-orbit {
+  to { transform: rotate(360deg); }
+}
+
+.wk-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99998; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(250, 248, 244, 0.6);
+  backdrop-filter: blur(2px);
+}

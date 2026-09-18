@@ -1,0 +1,15 @@
+{
+  "wishlist": {
+    "add": "Aggiungi alla lista dei desideri",
+    "remove": "Rimuovi dalla lista dei desideri",
+    "added": "Nella lista dei desideri",
+    "addedToast": "Aggiunto alla lista dei desideri",
+    "removedToast": "Rimosso dalla lista dei desideri",
+    "subscribeTooltip": "Abbonati a WishKeeper per attivare le liste dei desideri",
+    "ariaLabel": "Lista dei desideri"
+  },
+  "ratings": {
+    "stars": { "label": "Valutazione" },
+    "home": { "recommendationText": "Consigliato" }
+  }
+}

@@ -143,7 +143,7 @@
   <script>
     window.__wlPageConfig = {
       shop: ${JSON.stringify(shop)},
-      proxyUrl: ${JSON.stringify("https://" + shop)} + "/apps/wishlist",
+      proxyUrl: "/apps/wishlist",
       customerId: ${JSON.stringify(loggedInCustomerId)} || localStorage.getItem("wishlist_guest_id"),
       locale: "en",
       language: ${JSON.stringify(language)}

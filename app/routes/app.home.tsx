@@ -156,7 +156,7 @@ function valueAtX(points: { x: number; y: number }[], x: number) {
 }
 
 function PremiumChart({ data }: { data: { date: string; count: number }[] }) {
-  const W = 560, H = 220, padL = 8, padR = 8, padT = 26, padB = 34;
+  const W = 560, H = 220, padL = 20, padR = 28, padT = 26, padB = 34;
   const max = Math.max(...data.map((d) => d.count), 1);
   const safeLen = Math.max(data.length - 1, 1);
   const toX = (i: number) => padL + (i / safeLen) * (W - padL - padR);

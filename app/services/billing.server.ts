@@ -13,7 +13,7 @@ export const PLANS = {
             "Mobile friendly",
             "Fast access",
         ],
-    },
+    },  
     pro: {
         name: "pro",
         displayName: "Pro Plan",

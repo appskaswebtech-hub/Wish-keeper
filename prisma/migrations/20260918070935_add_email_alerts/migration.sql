@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `storesettings` ADD COLUMN `alertsEnabled` BOOLEAN NOT NULL DEFAULT false,
+ALTER TABLE `StoreSettings` ADD COLUMN `alertsEnabled` BOOLEAN NOT NULL DEFAULT false,
     ADD COLUMN `lowStockThreshold` INTEGER NOT NULL DEFAULT 5,
     ADD COLUMN `smtpFromEmail` VARCHAR(191) NULL,
     ADD COLUMN `smtpFromName` VARCHAR(191) NULL,

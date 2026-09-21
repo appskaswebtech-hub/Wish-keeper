@@ -13,6 +13,9 @@
   transition: all 0.2s ease;
   font-family: inherit;
   position: relative;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* ─── Full button style ─── */
@@ -30,6 +33,12 @@
 .wl-btn--full:hover {
   border-color: var(--wl-active);
   color: var(--wl-active);
+}
+
+.wl-btn--full .wl-btn-text {
+  display: inline-block;
+  min-width: 132px;
+  text-align: left;
 }
 
 .wl-btn--full.active {
@@ -74,6 +83,35 @@
 .wl-btn-svg {
   transition: fill 0.2s, stroke 0.2s, transform 0.2s;
   flex-shrink: 0;
+}
+
+/* Ripple burst on "add" click. Must be absolutely positioned: these spans
+   are appended as normal DOM children, and without position:absolute they
+   take up space in the flex layout and shove the icon/text sideways. */
+.wl-ripple-ring,
+.wl-ripple-ring--2 {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  border: 1.5px solid var(--wl-active);
+  opacity: 0;
+  animation: wl-ripple-pop 0.6s ease-out;
+}
+
+.wl-ripple-ring--2 {
+  animation-delay: 0.1s;
+}
+
+@keyframes wl-ripple-pop {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
 }
 
 .wl-btn.active .wl-btn-svg {

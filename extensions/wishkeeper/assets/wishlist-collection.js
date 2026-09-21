@@ -343,10 +343,13 @@
   }
 
   function updateHeaderBadge() {
+    if (window.__wlRefreshBadge) {
+      window.__wlRefreshBadge();
+      return;
+    }
     var badge = document.getElementById("wl-hdr-badge");
     if (badge) {
       var count = wishlistedIds.size;
-      localStorage.setItem("wl_count_" + CUSTOMER_ID, count);
       badge.textContent = count > 99 ? "99+" : count;
       badge.style.display = count > 0 ? "block" : "none";
     }
@@ -422,6 +425,45 @@
   } else {
     init();
   }
+
+  function resyncFromServer() {
+    fetch(PROXY + "/api/wishlist?shop=" + encodeURIComponent(SHOP) + "&customerId=" + encodeURIComponent(CUSTOMER_ID))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var items = (data.wishlist && data.wishlist.items) || [];
+        var freshIds = new Set();
+        items.forEach(function (item) { freshIds.add(item.productId); });
+        wishlistedIds = freshIds;
+        window.__wlWishlistedIds = wishlistedIds;
+
+        var allBtns = document.querySelectorAll("[data-wl-product]");
+        var seen = {};
+        for (var i = 0; i < allBtns.length; i++) {
+          var pid = allBtns[i].getAttribute("data-wl-product");
+          if (seen[pid]) continue;
+          seen[pid] = true;
+          syncButtons(pid, freshIds.has(pid));
+        }
+        updateHeaderBadge();
+      })
+      .catch(function () { });
+  }
+
+  window.addEventListener("pageshow", function () {
+    resyncFromServer();
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") resyncFromServer();
+  });
+
+  // Keep hearts genuinely live: re-check the real wishlist state every few
+  // seconds while this tab is open and visible, so changes made elsewhere
+  // (another tab, the popup drawer, the product page) show up here without
+  // requiring a manual refresh or navigation.
+  setInterval(function () {
+    if (document.visibilityState === "visible") resyncFromServer();
+  }, 6000);
 
   var observer = new MutationObserver(function (mutations) {
     var hasNew = false;

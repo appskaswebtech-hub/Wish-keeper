@@ -65,6 +65,8 @@ model StoreSettings {
   customIconSvg     String? @db.Text
   customIconColor   String  @default("#e74c6f")
 
+  wishlistDisplayMode String @default("page")
+
   alertsEnabled     Boolean @default(false)
   lowStockThreshold Int     @default(5)
   smtpHost          String?

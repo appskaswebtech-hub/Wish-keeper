@@ -102,6 +102,7 @@ export async function updateStoreSettings(
     loadingIconColor?: string;
     customIconSvg?: string;
     customIconColor?: string;
+    wishlistDisplayMode?: string;
     alertsEnabled?: boolean;
     lowStockThreshold?: number;
     smtpHost?: string | null;
@@ -193,8 +194,11 @@ export async function removeWishlistItem(
   const wishlist = await prisma.wishlist.findFirst({ where: { storeId, customerId } });
   if (!wishlist) return null;
 
+  // Match by product only, not variant: the "is this saved?" check (isInWishlist)
+  // is product-level, so removal must be too, or a variant-specific remove can
+  // silently match nothing when the item was originally saved without a variant.
   const result = await prisma.wishlistItem.deleteMany({
-    where: { wishlistId: wishlist.id, productId, variantId: variantId || null },
+    where: { wishlistId: wishlist.id, productId },
   });
   if (result.count > 0) {
     await prisma.wishlistActivity.create({

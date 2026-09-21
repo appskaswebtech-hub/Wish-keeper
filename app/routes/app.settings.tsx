@@ -56,6 +56,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     showShareButton: formData.get("showShareButton") === "true",
     showItemCount: formData.get("showItemCount") === "true",
     headerIconEnabled: formData.get("headerIconEnabled") === "true",
+    wishlistDisplayMode: (formData.get("wishlistDisplayMode") as string) || "page",
     gridColumns: parseInt(formData.get("gridColumns") as string) || 4,
     maxItemsPerList: parseInt(formData.get("maxItemsPerList") as string) || 50,
     iconStyle,
@@ -187,6 +188,7 @@ export default function Settings() {
     showShareButton: settings?.showShareButton ?? true,
     showItemCount: settings?.showItemCount ?? true,
     headerIconEnabled: settings?.headerIconEnabled ?? true,
+    wishlistDisplayMode: settings?.wishlistDisplayMode ?? "page",
     gridColumns: String(settings?.gridColumns ?? 4),
     maxItemsPerList: String(settings?.maxItemsPerList ?? 50),
     iconStyle: settings?.iconStyle ?? "heart",
@@ -242,6 +244,17 @@ export default function Settings() {
               <ToggleRow label={t("settings.pageDisplay.showVendor")} checked={form.showVendor} onChange={(v) => set("showVendor", v)} />
               <ToggleRow label={t("settings.pageDisplay.showShareButton")} checked={form.showShareButton} onChange={(v) => set("showShareButton", v)} />
               <ToggleRow label={t("settings.pageDisplay.showItemCount")} checked={form.showItemCount} onChange={(v) => set("showItemCount", v)} />
+              <div className="st-divider" />
+              <div className="st-field">
+                <label className="st-field__label">Wishlist opens as</label>
+                <div className="st-field__select-wrap">
+                  <select className="st-field__select" value={form.wishlistDisplayMode} onChange={(e) => set("wishlistDisplayMode", e.target.value)}>
+                    <option value="page">Full Page</option>
+                    <option value="popup">Popup Drawer</option>
+                  </select>
+                </div>
+                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>Full Page sends customers to a dedicated wishlist page. Popup Drawer slides the wishlist in over whatever page they're on, without navigating away.</div>
+              </div>
               <div className="st-divider" />
               <div className="st-field">
                 <label className="st-field__label">{t("settings.pageDisplay.gridColumns")}</label>

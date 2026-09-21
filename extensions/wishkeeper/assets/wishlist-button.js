@@ -224,12 +224,33 @@
         .catch(function () {});
     }
 
-    fetch(proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&customerId=" + encodeURIComponent(customerId) + "&productId=" + encodeURIComponent(productId) + "&action=check")
-      .then(function (r) { return r.json(); })
-      .then(function (data) { if (data.inWishlist) setActive(true); })
-      .catch(function () { });
+    var initialCheckDone = false;
+
+    function refreshActiveState(silent) {
+      if (!silent) btn.classList.add("loading");
+      return fetch(proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&customerId=" + encodeURIComponent(customerId) + "&productId=" + encodeURIComponent(productId) + "&action=check")
+        .then(function (r) { return r.json(); })
+        .then(function (data) { setActive(!!data.inWishlist); })
+        .catch(function () { })
+        .finally(function () { initialCheckDone = true; if (!silent) btn.classList.remove("loading"); });
+    }
+
+    refreshActiveState();
+
+    window.addEventListener("pageshow", function () {
+      refreshActiveState(true);
+    });
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") refreshActiveState(true);
+    });
+
+    setInterval(function () {
+      if (document.visibilityState === "visible") refreshActiveState(true);
+    }, 6000);
 
     btn.addEventListener("click", function () {
+      if (!initialCheckDone) return;
       btn.classList.add("loading");
       var action = isActive ? "remove" : "add";
       setActive(!isActive);
@@ -268,13 +289,7 @@
           var imgSrc = imgEl ? imgEl.src : null;
           var productName = titleEl ? titleEl.textContent.trim() : null;
           wlToast(action === "add" ? textAddedToast : textRemovedToast, action === "add" ? "add" : "remove", imgSrc, productName);
-          var badge = document.getElementById("wl-hdr-badge");
-          if (badge) {
-            var current = parseInt(badge.textContent) || 0;
-            var newCount = action === "add" ? current + 1 : Math.max(0, current - 1);
-            badge.textContent = newCount;
-            badge.style.display = newCount > 0 ? "block" : "none";
-          }
+          if (window.__wlRefreshBadge) window.__wlRefreshBadge();
         })
         .catch(function () { setActive(isActive); })
         .finally(function () { btn.classList.remove("loading"); });

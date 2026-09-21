@@ -41,6 +41,86 @@
     var initialCustomSvg = cachedSettings && cachedSettings.customIconSvg;
     var initialHeaderEnabled = !cachedSettings || cachedSettings.headerIconEnabled !== false;
     var disabledByMerchant = !initialHeaderEnabled;
+    var displayMode = (cachedSettings && cachedSettings.wishlistDisplayMode) || "page";
+
+    function openWishlistDrawer() {
+      var existing = document.getElementById("wl-drawer-overlay");
+      if (existing) {
+        existing.style.opacity = "1"; existing.style.pointerEvents = "auto";
+        var existingPanel = existing.querySelector("#wl-drawer-panel");
+        if (existingPanel) { existingPanel.style.transform = "scale(1)"; existingPanel.style.opacity = "1"; }
+        return;
+      }
+
+      var overlay = document.createElement("div");
+      overlay.id = "wl-drawer-overlay";
+      overlay.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:rgba(0,0,0,0.45);opacity:0;transition:opacity 0.25s ease;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;";
+
+      var panel = document.createElement("div");
+      panel.id = "wl-drawer-panel";
+      panel.style.cssText = "position:relative;width:min(760px,94vw);max-height:min(680px,90vh);background:#fff;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.25);transform:scale(0.94);opacity:0;transition:transform 0.25s ease,opacity 0.25s ease;display:flex;flex-direction:column;overflow:hidden;";
+
+      var closeBtn = document.createElement("button");
+      closeBtn.setAttribute("type", "button");
+      closeBtn.setAttribute("aria-label", "Close wishlist");
+      closeBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+      closeBtn.style.cssText = "position:absolute;top:10px;right:10px;z-index:2;width:34px;height:34px;border-radius:50%;border:none;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#1a1612;";
+      closeBtn.onclick = closeWishlistDrawer;
+
+      var content = document.createElement("div");
+      content.id = "wl-drawer-content";
+      content.style.cssText = "flex:1;width:100%;height:100%;overflow-y:auto;";
+      content.innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:280px;">' +
+          '<div style="position:relative;width:60px;height:60px;display:flex;align-items:center;justify-content:center;">' +
+            '<span style="font-family:Georgia,serif;font-weight:700;font-size:26px;color:#b8922a;opacity:0.85;">W</span>' +
+            '<span style="position:absolute;inset:0;animation:wl-drawer-orbit 1s linear infinite;">' +
+              '<span style="position:absolute;top:-2px;left:50%;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#b8922a;box-shadow:0 0 8px rgba(184,146,42,0.55);"></span>' +
+            '</span>' +
+          '</div>' +
+        '</div>' +
+        '<style>@keyframes wl-drawer-orbit{to{transform:rotate(360deg)}}</style>';
+
+      panel.appendChild(closeBtn);
+      panel.appendChild(content);
+      overlay.appendChild(panel);
+      overlay.onclick = function (e) { if (e.target === overlay) closeWishlistDrawer(); };
+      document.body.appendChild(overlay);
+
+      requestAnimationFrame(function () {
+        overlay.style.opacity = "1";
+        panel.style.transform = "scale(1)";
+        panel.style.opacity = "1";
+      });
+
+      fetch("/apps/wishlist/page?embed=1")
+        .then(function (r) { return r.text(); })
+        .then(function (html) {
+          content.innerHTML = html;
+          var scripts = content.querySelectorAll("script");
+          for (var i = 0; i < scripts.length; i++) {
+            var old = scripts[i];
+            var fresh = document.createElement("script");
+            for (var a = 0; a < old.attributes.length; a++) {
+              fresh.setAttribute(old.attributes[a].name, old.attributes[a].value);
+            }
+            fresh.textContent = old.textContent;
+            old.parentNode.replaceChild(fresh, old);
+          }
+        })
+        .catch(function () {
+          content.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:13px;">Could not load your wishlist. Please try again.</div>';
+        });
+    }
+
+    function closeWishlistDrawer() {
+      var overlay = document.getElementById("wl-drawer-overlay");
+      if (!overlay) return;
+      overlay.style.opacity = "0";
+      var panel = document.getElementById("wl-drawer-panel");
+      if (panel) { panel.style.transform = "scale(0.94)"; panel.style.opacity = "0"; }
+      setTimeout(function () { if (overlay.parentElement) overlay.remove(); }, 250);
+    }
     console.log("[WL DEBUG] init start. cachedSettings:", cachedSettings, "disabledByMerchant:", disabledByMerchant);
 
     function buildIconHtml() {
@@ -73,6 +153,12 @@
       link.innerHTML =
         buildIconHtml() +
         '<span id="wl-hdr-badge" style="position:absolute;top:2px;right:0;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:' + initialColor + ';color:white;font-size:10px;font-weight:700;line-height:18px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:none;">0</span>';
+      link.addEventListener("click", function (e) {
+        if (displayMode === "popup") {
+          e.preventDefault();
+          openWishlistDrawer();
+        }
+      });
       return link;
     }
 
@@ -225,6 +311,8 @@
             document.head.appendChild(customStyle);
           }
 
+          displayMode = d.settings.wishlistDisplayMode || "page";
+
           try {
             localStorage.setItem(CACHE_KEY, JSON.stringify({
               headerIconEnabled: d.settings.headerIconEnabled,
@@ -232,6 +320,7 @@
               customIconSvg: d.settings.customIconSvg,
               customIconColor: d.settings.customIconColor,
               activeColor: d.settings.activeColor,
+              wishlistDisplayMode: d.settings.wishlistDisplayMode,
             }));
           } catch (_) {}
 
@@ -252,35 +341,27 @@
         .catch(function () {});
     }
 
-    // Fetch badge count with localStorage cache
-    if (customerId) {
-      var cacheKey = "wl_count_" + customerId;
-      var cached = localStorage.getItem(cacheKey);
-
-      // Show cached count immediately
-      if (cached) {
-        var badge = document.getElementById("wl-hdr-badge");
-        var cachedCount = parseInt(cached) || 0;
-        if (cachedCount > 0 && badge) {
-          badge.textContent = cachedCount > 99 ? "99+" : cachedCount;
-          badge.style.display = "block";
-        }
-      }
-
-      // Fetch fresh count in background
+    // Live badge count, fetched fresh from the server every time. No
+    // optimistic cache, no local increment/decrement math: any script on the
+    // page can call window.__wlRefreshBadge() after an add/remove and the
+    // badge will show the real, current, server-confirmed count.
+    function refreshBadge() {
+      if (!customerId) return;
       fetch(proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&customerId=" + encodeURIComponent(customerId) + "&action=count")
         .then(function (r) { return r.json(); })
         .then(function (data) {
           var badge = document.getElementById("wl-hdr-badge");
           if (badge) {
             var count = data.count || 0;
-            localStorage.setItem(cacheKey, count);
             badge.textContent = count > 99 ? "99+" : count;
             badge.style.display = count > 0 ? "block" : "none";
           }
         })
         .catch(function () { });
     }
+
+    window.__wlRefreshBadge = refreshBadge;
+    refreshBadge();
   }
 
   if (document.readyState === "loading") {
@@ -288,4 +369,20 @@
   } else {
     init();
   }
+
+  window.addEventListener("pageshow", function () {
+    init();
+  });
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") init();
+  });
+
+  // Keep the badge genuinely live without re-running the full init (which
+  // would re-create the icon-insertion MutationObserver every time).
+  setInterval(function () {
+    if (document.visibilityState === "visible" && window.__wlRefreshBadge) {
+      window.__wlRefreshBadge();
+    }
+  }, 6000);
 })();

@@ -67,6 +67,8 @@ model StoreSettings {
 
   wishlistDisplayMode String @default("page")
 
+  customWishlistButtonHtml String? @db.Text
+
   alertsEnabled     Boolean @default(false)
   lowStockThreshold Int     @default(5)
   smtpHost          String?

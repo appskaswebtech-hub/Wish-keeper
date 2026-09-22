@@ -233,9 +233,6 @@
       }
 
       var cartEl = container.querySelector('a[href="/cart"], .action__cart, .header__icon--cart, [data-cart-icon], .cart-toggle, [data-cart-toggle]');
-      var positionTarget = (cartEl && cartEl.parentElement) || container;
-      var positionTargetStyle = window.getComputedStyle(positionTarget).position;
-      if (positionTargetStyle === "static") positionTarget.style.position = "relative";
 
       if (cartEl && cartEl.parentElement) {
         cartEl.parentElement.insertBefore(link, cartEl);

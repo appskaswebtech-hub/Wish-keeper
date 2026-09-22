@@ -50,6 +50,43 @@
     }, 4000);
   }
 
+  // Given a pasted HTML snippet, figure out how to find that same element on
+  // the live page later: prefer id, then class, then fall back to matching
+  // by tag + visible text. Returns null if the snippet can't be parsed.
+  function deriveMatcher(html) {
+    if (!html || !html.trim()) return null;
+    try {
+      var doc = new DOMParser().parseFromString(html, "text/html");
+      var el = doc.body.firstElementChild;
+      if (!el) return null;
+      if (el.id) {
+        return { type: "css", selector: "#" + (window.CSS && CSS.escape ? CSS.escape(el.id) : el.id) };
+      }
+      if (el.className && typeof el.className === "string" && el.className.trim()) {
+        var classes = el.className.trim().split(/\s+/).map(function (c) {
+          return "." + (window.CSS && CSS.escape ? CSS.escape(c) : c);
+        }).join("");
+        return { type: "css", selector: el.tagName.toLowerCase() + classes };
+      }
+      var text = (el.textContent || "").trim();
+      if (text) {
+        return { type: "text", tag: el.tagName.toLowerCase(), text: text };
+      }
+      return { type: "css", selector: el.tagName.toLowerCase() };
+    } catch (err) {
+      console.error(LOG, "deriveMatcher failed to parse custom button HTML", err);
+      return null;
+    }
+  }
+
+  // Resolves the current product's handle straight from the page URL, for
+  // buttons that don't carry a data-handle attribute themselves (e.g. an
+  // arbitrary button a merchant already has on their product page).
+  function getPageProductHandle() {
+    var match = location.pathname.match(/\/products\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+  }
+
   function init() {
     var cfg = window.__wlCustomBtnConfig;
     if (!cfg) { console.warn(LOG, "no config found on window.__wlCustomBtnConfig"); return; }
@@ -59,6 +96,7 @@
     var proxyUrl = cfg.proxyUrl;
     var selector = cfg.selector || ".st-wishlist-button";
     var customerId = cfg.customerId;
+    var customMatcher = null;
 
     var GUEST_KEY = "wishlist_guest_id";
 
@@ -128,8 +166,8 @@
       btn.dataset.wlCustomInitialized = "true";
       console.log(LOG, "setting up button", btn);
 
-      var handle = btn.dataset.handle;
-      if (!handle) { console.warn(LOG, "button has no data-handle, skipping", btn); return; }
+      var handle = btn.dataset.handle || getPageProductHandle();
+      if (!handle) { console.warn(LOG, "button has no data-handle and no product could be resolved from the page URL, skipping", btn); return; }
 
       var addText = btn.dataset.textAdd || btn.textContent.trim() || "Add to Wishlist";
       var removeText = btn.dataset.textRemove || "In Wishlist";
@@ -214,9 +252,29 @@
       });
     }
 
+    function findAllMatches() {
+      var seen = new Set();
+      var results = [];
+      document.querySelectorAll(selector).forEach(function (el) {
+        if (!seen.has(el)) { seen.add(el); results.push(el); }
+      });
+      if (customMatcher) {
+        var matched = customMatcher.type === "css"
+          ? document.querySelectorAll(customMatcher.selector)
+          : Array.prototype.filter.call(
+              document.querySelectorAll(customMatcher.tag),
+              function (el) { return (el.textContent || "").trim() === customMatcher.text; }
+            );
+        matched.forEach(function (el) {
+          if (!seen.has(el)) { seen.add(el); results.push(el); }
+        });
+      }
+      return results;
+    }
+
     function scan() {
-      var found = document.querySelectorAll(selector);
-      console.log(LOG, "scan found", found.length, "button(s) for selector", selector);
+      var found = findAllMatches();
+      console.log(LOG, "scan found", found.length, "button(s)");
       found.forEach(setupButton);
     }
 
@@ -230,8 +288,12 @@
       .then(function (d) {
         console.log(LOG, "settings response body", d);
         hasActivePlan = d.hasActivePlan !== false;
+        if (d.settings && d.settings.customWishlistButtonHtml) {
+          customMatcher = deriveMatcher(d.settings.customWishlistButtonHtml);
+          console.log(LOG, "derived custom button matcher", customMatcher);
+        }
         if (hasActivePlan === false) {
-          document.querySelectorAll(selector).forEach(applyDisabledState);
+          findAllMatches().forEach(applyDisabledState);
         }
       })
       .catch(function (err) {

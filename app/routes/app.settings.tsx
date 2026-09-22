@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
@@ -74,6 +74,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     smtpPassword: (formData.get("smtpPassword") as string) || null,
     smtpFromName: (formData.get("smtpFromName") as string) || null,
     smtpFromEmail: (formData.get("smtpFromEmail") as string) || null,
+    customWishlistButtonHtml: (formData.get("customWishlistButtonHtml") as string) || null,
   });
   return data({ success: true });
 };
@@ -179,6 +180,15 @@ export default function Settings() {
   );
   const [gmailHelpOpen, setGmailHelpOpen] = useState(false);
   const [customHelpOpen, setCustomHelpOpen] = useState(false);
+  const customButtonTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (window.location.hash === "#custom-wishlist-button-section") {
+      const el = document.getElementById("custom-wishlist-button-section");
+      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      customButtonTextareaRef.current?.focus();
+    }
+  }, []);
 
   const [form, setForm] = useState({
     showTitle: settings?.showTitle ?? true,
@@ -205,6 +215,7 @@ export default function Settings() {
     smtpPassword: settings?.smtpPassword ?? "",
     smtpFromName: settings?.smtpFromName ?? "",
     smtpFromEmail: settings?.smtpFromEmail ?? "",
+    customWishlistButtonHtml: settings?.customWishlistButtonHtml ?? "",
   });
 
   const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -391,6 +402,36 @@ export default function Settings() {
               </div>
             </div>
           )}
+
+          <div className="st-card" id="custom-wishlist-button-section" style={{ gridColumn: "1 / -1" }}>
+            <div className="st-card__head">
+              <div className="st-card__head-row">
+                <div className="st-card__icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+                </div>
+                <h2 className="st-card__title">Custom Wishlist Button</h2>
+              </div>
+              <p className="st-card__desc">Already have your own "Add to Wishlist" button in your theme? Paste its HTML and we'll wire it up automatically — no code editing needed.</p>
+            </div>
+            <div className="st-card__body">
+              <div className="st-code-window">
+                <div className="st-code-window__head">
+                  <span className="st-code-window__label">Button HTML</span>
+                </div>
+                <p style={{ fontSize: 11, color: "var(--text-muted)", margin: "10px 14px 0", lineHeight: 1.5 }}>
+                  Tip: copy it from your theme code, or right-click the button on your storefront and choose "Inspect" → copy the element's HTML.
+                </p>
+                <textarea
+                  ref={customButtonTextareaRef}
+                  className="st-code-window__textarea"
+                  rows={4}
+                  placeholder={`<button class="my-wishlist-btn">Add to Wishlist</button>`}
+                  value={form.customWishlistButtonHtml}
+                  onChange={(e) => set("customWishlistButtonHtml", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="st-card" style={{ gridColumn: "1 / -1" }}>
             <div className="st-card__head">

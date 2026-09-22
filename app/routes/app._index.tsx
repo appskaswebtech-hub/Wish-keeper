@@ -169,25 +169,18 @@ export default function Analytics() {
               <span className="dash-guide-step__num">2</span>
               <div>
                 <p className="dash-guide-step__title">Enable the WishKeeper App Embed</p>
-                <p className="dash-guide-step__desc">In the left sidebar, go to App Embeds and toggle WishKeeper on. This activates the heart button and wishlist logic storewide.</p>
+                <p className="dash-guide-step__desc">In the left sidebar, go to App Embeds and toggle WishKeeper on. It automatically places the heart icon next to your cart icon in the header.</p>
               </div>
             </div>
             <div className="dash-guide-step">
               <span className="dash-guide-step__num">3</span>
               <div>
-                <p className="dash-guide-step__title">Place the Header Icon Block</p>
-                <p className="dash-guide-step__desc">Select your Header section, find the WishKeeper icon block in the block list, then drag it up or down to sit exactly where you want next to your cart icon.</p>
+                <p className="dash-guide-step__title">Pick an Icon Style and Colour</p>
+                <p className="dash-guide-step__desc">With WishKeeper selected in the App Embeds list, open its settings on the left: choose "Icon style" (Heart, Bookmark, or Star) and set "Badge color" to match your brand. Changes preview instantly in the editor.</p>
               </div>
             </div>
             <div className="dash-guide-step">
               <span className="dash-guide-step__num">4</span>
-              <div>
-                <p className="dash-guide-step__title">Pick an Icon Style and Colour</p>
-                <p className="dash-guide-step__desc">With the WishKeeper block selected, open its settings on the left: choose "Icon style" (Heart, Bookmark, or Star) and set "Badge color" to match your brand. Changes preview instantly in the editor.</p>
-              </div>
-            </div>
-            <div className="dash-guide-step">
-              <span className="dash-guide-step__num">5</span>
               <div>
                 <p className="dash-guide-step__title">Save</p>
                 <p className="dash-guide-step__desc">Click Save in the top right. Your storefront now shows the wishlist icon live, styled the way you picked, no theme code edits required.</p>
@@ -310,6 +303,13 @@ export default function Analytics() {
               desc="Manage your WishKeeper subscription in one place: see your current plan, what's included, and your next billing date. Upgrade, downgrade, or cancel any time directly through Shopify's secure billing, no separate payment setup needed. Every other page in the app, Wishlists and Settings, unlocks automatically the moment a plan is active."
               onOpen={() => navigate("/app/billing")}
               locked={false}
+            />
+            <PageCard
+              icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>}
+              title="Custom Wishlist Button"
+              desc="Already have your own 'Add to Wishlist' button somewhere in your theme, not the WishKeeper block? Paste its HTML into Settings and we'll automatically detect it on your product pages and wire up add/remove, no code editing, no CSS selectors."
+              onOpen={() => navigate("/app/settings#custom-wishlist-button-section")}
+              locked={!hasActivePlan}
             />
           </div>
         </div>

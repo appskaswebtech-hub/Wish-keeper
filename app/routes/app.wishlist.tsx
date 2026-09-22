@@ -12,6 +12,7 @@ import wishlistStyles from "../styles/wishlist.css?url";
 
 export const links = () => [{ rel: "stylesheet", href: wishlistStyles }];
 
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin, session } = await authenticate.admin(request);
   const store = await findOrCreateStore(session.shop, session.accessToken!);

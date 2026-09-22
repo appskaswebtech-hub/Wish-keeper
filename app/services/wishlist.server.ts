@@ -111,6 +111,7 @@ export async function updateStoreSettings(
     smtpPassword?: string | null;
     smtpFromEmail?: string | null;
     smtpFromName?: string | null;
+    customWishlistButtonHtml?: string | null;
   }
 ) {
   return prisma.storeSettings.upsert({

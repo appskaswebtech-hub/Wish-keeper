@@ -358,7 +358,10 @@ function BillingModal({ open, onNavigate, t, features }: { open: boolean; onNavi
   );
 }
 
-function TrialBanner({ daysRemaining, onUpgrade }: { daysRemaining: number; onUpgrade: () => void }) {
+function TrialBanner({ daysRemaining, onUpgrade, t }: { daysRemaining: number; onUpgrade: () => void; t: (key: string, vars?: Record<string, string | number>) => string }) {
+  const text = daysRemaining === 1
+    ? t("dashboard.trialBanner.daysLeftSingular")
+    : t("dashboard.trialBanner.daysLeftPlural", { n: daysRemaining });
   return (
     <div
       style={{
@@ -374,9 +377,7 @@ function TrialBanner({ daysRemaining, onUpgrade }: { daysRemaining: number; onUp
         color: "#854d0e",
       }}
     >
-      <span>
-        <strong>{daysRemaining === 1 ? "1 day" : `${daysRemaining} days`}</strong> left in your free trial. Upgrade now to keep wishlists running without interruption.
-      </span>
+      <span>{text}</span>
       <button
         onClick={onUpgrade}
         style={{
@@ -392,7 +393,7 @@ function TrialBanner({ daysRemaining, onUpgrade }: { daysRemaining: number; onUp
           whiteSpace: "nowrap",
         }}
       >
-        Upgrade plan
+        {t("dashboard.trialBanner.upgradePlan")}
       </button>
     </div>
   );
@@ -412,7 +413,7 @@ export default function Index() {
       <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} t={t} features={subscribeFeatures} />
       <div className="dash-root">
         {trialDaysRemaining !== null && trialDaysRemaining <= 7 && (
-          <TrialBanner daysRemaining={trialDaysRemaining} onUpgrade={() => navigate("/app/billing")} />
+          <TrialBanner daysRemaining={trialDaysRemaining} onUpgrade={() => navigate("/app/billing")} t={t} />
         )}
         <div className="dash-header">
           <div className="dash-header__left">
@@ -433,42 +434,41 @@ export default function Index() {
             )}
           </span>
           <p className="dash-callout__text">
-            {weeklyComparison.thisWeek === 0 && weeklyComparison.lastWeek === 0 ? (
-              <>No saves yet this week or last, once shoppers start hearting products, your week-over-week trend shows up here.</>
-            ) : (
-              <>
-                <strong>{weeklyComparison.thisWeek} saves</strong> this week, {weeklyComparison.percentChange >= 0 ? "up" : "down"}{" "}
-                <strong>{Math.abs(weeklyComparison.percentChange)}%</strong> compared to last week's {weeklyComparison.lastWeek}.
-              </>
-            )}
+            {weeklyComparison.thisWeek === 0 && weeklyComparison.lastWeek === 0
+              ? t("dashboard.engagementCallout.empty")
+              : t(weeklyComparison.percentChange >= 0 ? "dashboard.engagementCallout.up" : "dashboard.engagementCallout.down", {
+                  n: weeklyComparison.thisWeek,
+                  pct: Math.abs(weeklyComparison.percentChange),
+                  prev: weeklyComparison.lastWeek,
+                })}
           </p>
         </div>
         <div className="dash-bottom-row">
           <div className="dash-tile-grid">
             <TileCard
-              title="Total Wishlist Items"
+              title={t("dashboard.stats2.totalItems")}
               value={analytics.totalItems.toLocaleString()}
               sparkData={sparkData}
-              badge={{ text: `${Math.abs(weeklyComparison.percentChange)}% vs last week`, trend: weeklyComparison.percentChange > 0 ? "up" : weeklyComparison.percentChange < 0 ? "down" : "neutral" }}
+              badge={{ text: t("dashboard.stats2.vsLastWeek", { pct: Math.abs(weeklyComparison.percentChange) }), trend: weeklyComparison.percentChange > 0 ? "up" : weeklyComparison.percentChange < 0 ? "down" : "neutral" }}
             />
             <TileCard
-              title="Items Added (7 days)"
+              title={t("dashboard.stats2.itemsAdded")}
               value={analytics.recentItems.toLocaleString()}
               sparkData={sparkData}
-              badge={{ text: `${Math.abs(weeklyComparison.percentChange)}% vs last week`, trend: weeklyComparison.percentChange > 0 ? "up" : weeklyComparison.percentChange < 0 ? "down" : "neutral" }}
+              badge={{ text: t("dashboard.stats2.vsLastWeek", { pct: Math.abs(weeklyComparison.percentChange) }), trend: weeklyComparison.percentChange > 0 ? "up" : weeklyComparison.percentChange < 0 ? "down" : "neutral" }}
             />
             <TileCard
-              title="Active Wishlists"
+              title={t("dashboard.stats2.activeWishlists.title")}
               value={analytics.totalWishlists.toLocaleString()}
               sparkData={sparkData}
-              badge={{ text: "All time", trend: "neutral" }}
+              badge={{ text: t("dashboard.stats2.activeWishlists.footer"), trend: "neutral" }}
             />
             <TileCard
-              title="Engagement This Week"
+              title={t("dashboard.stats2.engagement.title")}
               value={String(Math.round((Math.min(analytics.recentItems, Math.max(analytics.totalItems, 1)) / Math.max(analytics.totalItems, 1)) * 100))}
               suffix="%"
               sparkData={sparkData}
-              badge={{ text: "of all saved items", trend: "neutral" }}
+              badge={{ text: t("dashboard.stats2.engagement.footer"), trend: "neutral" }}
             />
           </div>
           <div className="dash-panel dash-donut-panel">
@@ -477,10 +477,10 @@ export default function Index() {
                 <span className="dash-panel__title-icon">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
                 </span>
-                Engagement
+                {t("dashboard.engagementPanel.title")}
               </span>
             </div>
-            <p className="dash-donut__sub">Share of your currently saved items that were added in the last 7 days.</p>
+            <p className="dash-donut__sub">{t("dashboard.engagementPanel.sub")}</p>
             {(() => {
               const total = Math.max(analytics.totalItems, 1);
               const recent = Math.min(analytics.recentItems, total);
@@ -493,18 +493,18 @@ export default function Index() {
                     <div className="dash-donut__center">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="#d4a843" className="dash-donut__icon"><path d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.08C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z" /></svg>
                       <span className="dash-donut__pct">{pct}%</span>
-                      <span className="dash-donut__label">this week</span>
+                      <span className="dash-donut__label">{t("dashboard.engagementPanel.thisWeek")}</span>
                     </div>
                   </div>
                   <div className="dash-donut__legend">
                     <div className="dash-donut__legend-row">
                       <span className="dash-donut__dot" style={{ background: "#b8922a" }} />
-                      <span>Last 7 days</span>
+                      <span>{t("dashboard.engagementPanel.last7Days")}</span>
                       <strong>{recent}</strong>
                     </div>
                     <div className="dash-donut__legend-row">
                       <span className="dash-donut__dot" style={{ background: "#f0e9d8" }} />
-                      <span>Saved earlier</span>
+                      <span>{t("dashboard.engagementPanel.savedEarlier")}</span>
                       <strong>{older}</strong>
                     </div>
                   </div>
@@ -517,13 +517,13 @@ export default function Index() {
           <div className="dash-chart-dark">
             <div className="dash-chart-dark__head">
               <div>
-                <p className="dash-chart-dark__title">Wishlist Growth</p>
+                <p className="dash-chart-dark__title">{t("dashboard.growth.title")}</p>
                 <p className="dash-chart-dark__range">{t("dashboard.activity.range")}</p>
               </div>
               <div className="dash-chart-dark__stat">
                 <span className="dash-chart-dark__dot" />
                 <div>
-                  <p className="dash-chart-dark__label">Saves this week</p>
+                  <p className="dash-chart-dark__label">{t("dashboard.growth.savesThisWeek")}</p>
                   <p className="dash-chart-dark__value">
                     {weeklyComparison.thisWeek}
                     <span className={`dash-chart-dark__change${weeklyComparison.percentChange < 0 ? " dash-chart-dark__change--down" : ""}`}>
@@ -541,7 +541,7 @@ export default function Index() {
                 <span className="dash-panel__title-icon">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><path d="M13 2 3 14h7v8l10-12h-7z" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </span>
-                Growth Insights
+                {t("dashboard.growthInsights.title")}
               </span>
             </div>
             {(() => {
@@ -558,8 +558,8 @@ export default function Index() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><path d="M8 21h8M12 17v4M17 4H7v9a5 5 0 0010 0V4z" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     </span>
                     <div>
-                      <p className="dash-insights__label">Busiest Day</p>
-                      <p className="dash-insights__value">{peak.date} <span>· {peak.count} saves</span></p>
+                      <p className="dash-insights__label">{t("dashboard.growthInsights.busiestDay")}</p>
+                      <p className="dash-insights__value">{peak.date} <span>· {peak.count} {t(peak.count === 1 ? "dashboard.topProductsList.save" : "dashboard.topProductsList.saves")}</span></p>
                     </div>
                   </div>
                   <div className="dash-insights__row">
@@ -567,8 +567,8 @@ export default function Index() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><path d="M3 3v18h18" strokeLinecap="round" strokeLinejoin="round" /><path d="M7 15l4-4 3 3 5-6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                     </span>
                     <div>
-                      <p className="dash-insights__label">Daily Average</p>
-                      <p className="dash-insights__value">{avg} <span>saves / day</span></p>
+                      <p className="dash-insights__label">{t("dashboard.growthInsights.dailyAverage")}</p>
+                      <p className="dash-insights__value">{avg} <span>{t("dashboard.growthInsights.dailyAverageValue", { n: avg })}</span></p>
                     </div>
                   </div>
                   <div className="dash-insights__row">
@@ -576,8 +576,8 @@ export default function Index() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" strokeLinecap="round" /></svg>
                     </span>
                     <div>
-                      <p className="dash-insights__label">Today vs Yesterday</p>
-                      <p className="dash-insights__value">{today.count} <span>{diff === 0 ? "no change" : `${diff > 0 ? "+" : ""}${diff} vs yesterday`}</span></p>
+                      <p className="dash-insights__label">{t("dashboard.growthInsights.todayVsYesterday")}</p>
+                      <p className="dash-insights__value">{today.count} <span>{diff === 0 ? t("dashboard.growthInsights.noChange") : `${diff > 0 ? "+" : ""}${diff} ${t("dashboard.growthInsights.vsYesterday")}`}</span></p>
                     </div>
                   </div>
                 </div>
@@ -633,13 +633,13 @@ export default function Index() {
                 <span className="dash-panel__title-icon">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" strokeLinecap="round" /></svg>
                 </span>
-                Recent Activity
+                {t("dashboard.recentActivity.title")}
               </span>
             </div>
             {recentActivity.length === 0 ? (
               <div className="dash-empty">
-                <p className="dash-empty__title">No activity yet</p>
-                <p className="dash-empty__sub">Saves and removes will show up here as they happen.</p>
+                <p className="dash-empty__title">{t("dashboard.recentActivity.emptyTitle")}</p>
+                <p className="dash-empty__sub">{t("dashboard.recentActivity.emptySub")}</p>
               </div>
             ) : (
               <div className="dash-activity__list">
@@ -647,7 +647,7 @@ export default function Index() {
                   const info = productNameMap[a.productId];
                   const name = info?.title || a.productId;
                   const customerId = a.wishlist.customerId;
-                  const who = customerId.startsWith("guest_") ? "A guest" : activityCustomerMap[customerId] || "A customer";
+                  const who = customerId.startsWith("guest_") ? t("dashboard.recentActivity.whoGuest") : activityCustomerMap[customerId] || t("dashboard.recentActivity.whoCustomer");
                   return (
                     <div key={a.id} className="dash-activity__row">
                       <span className={`dash-activity__icon dash-activity__icon--${a.action}`}>
@@ -658,7 +658,7 @@ export default function Index() {
                         )}
                       </span>
                       <div>
-                        <p className="dash-activity__text"><strong>{who}</strong> {a.action === "added" ? "saved" : "removed"} <strong>{name}</strong></p>
+                        <p className="dash-activity__text">{t(a.action === "added" ? "dashboard.recentActivity.saved" : "dashboard.recentActivity.removed", { who, product: name })}</p>
                         <p className="dash-activity__time">{timeAgo(a.createdAt)}</p>
                       </div>
                     </div>
@@ -675,13 +675,13 @@ export default function Index() {
                 <span className="dash-panel__title-icon">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" /><circle cx="12" cy="12" r="10" /></svg>
                 </span>
-                Store Health
+                {t("dashboard.storeHealth.title")}
               </span>
             </div>
             <div className="dash-health__list">
-              <HealthRow ok={health.hasActivePlan} label="Subscription active" hint={health.hasActivePlan ? "Your plan is active and all pages are unlocked." : "Subscribe to unlock Wishlists and Settings."} actionLabel={health.hasActivePlan ? undefined : "View billing"} onAction={() => navigate("/app/billing")} />
-              <HealthRow ok={health.headerIconEnabled} label="Header icon enabled" hint={health.headerIconEnabled ? "The wishlist icon is turned on in Settings." : "Header icon is switched off in Settings."} actionLabel="Open settings" onAction={() => navigate("/app/settings")} />
-              <HealthRow ok={health.hasActivity} label="Receiving wishlist activity" hint={health.hasActivity ? "Customers are actively saving products." : "No saves recorded yet, check your theme's App Embeds."} actionLabel={health.hasActivity ? undefined : "Check embed"} onAction={() => navigate("/app")} />
+              <HealthRow ok={health.hasActivePlan} label={t("dashboard.storeHealth.subscriptionActive")} hint={health.hasActivePlan ? t("dashboard.storeHealth.subscriptionActiveHint") : t("dashboard.storeHealth.subscriptionInactiveHint")} actionLabel={health.hasActivePlan ? undefined : t("dashboard.storeHealth.viewBilling")} onAction={() => navigate("/app/billing")} />
+              <HealthRow ok={health.headerIconEnabled} label={t("dashboard.storeHealth.headerIconEnabled")} hint={health.headerIconEnabled ? t("dashboard.storeHealth.headerIconEnabledHint") : t("dashboard.storeHealth.headerIconDisabledHint")} actionLabel={t("dashboard.storeHealth.openSettings")} onAction={() => navigate("/app/settings")} />
+              <HealthRow ok={health.hasActivity} label={t("dashboard.storeHealth.receivingActivity")} hint={health.hasActivity ? t("dashboard.storeHealth.receivingActivityHint") : t("dashboard.storeHealth.noActivityHint")} actionLabel={health.hasActivity ? undefined : t("dashboard.storeHealth.checkEmbed")} onAction={() => navigate("/app")} />
             </div>
           </div>
           <div className="dash-panel">
@@ -690,19 +690,19 @@ export default function Index() {
                 <span className="dash-panel__title-icon">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><circle cx="9" cy="7" r="3" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" strokeLinecap="round" /><path d="M17 3.5a3 3 0 010 5.8M21 21v-2a4 4 0 00-2.5-3.7" strokeLinecap="round" /></svg>
                 </span>
-                Top Shoppers
+                {t("dashboard.topShoppers.title")}
               </span>
             </div>
             {topShoppers.length === 0 ? (
               <div className="dash-empty">
-                <p className="dash-empty__title">No shoppers yet</p>
-                <p className="dash-empty__sub">Customers with saved items will be ranked here.</p>
+                <p className="dash-empty__title">{t("dashboard.topShoppers.emptyTitle")}</p>
+                <p className="dash-empty__sub">{t("dashboard.topShoppers.emptySub")}</p>
               </div>
             ) : (
               <div className="dash-metrics-row-list">
                 {topShoppers.map((s: { customerId: string; itemCount: number }, i: number) => {
                   const isGuest = s.customerId.startsWith("guest_");
-                  const name = isGuest ? "Guest shopper" : shopperNameMap[s.customerId] || "Customer";
+                  const name = isGuest ? t("dashboard.topShoppers.guest") : shopperNameMap[s.customerId] || t("dashboard.topShoppers.customer");
                   const initial = name.charAt(0).toUpperCase();
                   return (
                     <div key={s.customerId} className="dash-metrics-row">
@@ -710,7 +710,7 @@ export default function Index() {
                       <div className="dash-metrics-avatar">{initial}</div>
                       <div className="dash-metrics-info">
                         <div className="dash-metrics-name">{name}</div>
-                        <div className="dash-metrics-sub">{s.itemCount} item{s.itemCount === 1 ? "" : "s"} saved</div>
+                        <div className="dash-metrics-sub">{s.itemCount} {t(s.itemCount === 1 ? "dashboard.topShoppers.itemSaved" : "dashboard.topShoppers.itemsSaved")}</div>
                       </div>
                     </div>
                   );

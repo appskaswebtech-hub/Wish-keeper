@@ -105,7 +105,7 @@ export default function Analytics() {
       <div className="dash-root">
         <div className="dash-header">
           <div className="dash-header__left">
-            <div className="dash-header__eyebrow">Getting Started</div>
+            <div className="dash-header__eyebrow">{t("overview.eyebrow")}</div>
             <h1 className="dash-header__title">WishKeeper <em>Overview</em></h1>
           </div>
           <div className="dash-header__right">
@@ -119,8 +119,8 @@ export default function Analytics() {
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
             </div>
             <div>
-              <p className="dash-setup-card__title">Wishlist Icon Setup</p>
-              <p className="dash-setup-card__sub">Make sure the wishlist icon is enabled in your theme's App Embeds.</p>
+              <p className="dash-setup-card__title">{t("overview.setup.title")}</p>
+              <p className="dash-setup-card__sub">{t("overview.setup.sub")}</p>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -141,7 +141,7 @@ export default function Analytics() {
                 }}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                Enabled
+                {t("overview.setup.enabled")}
               </span>
             )}
             <button
@@ -150,89 +150,89 @@ export default function Analytics() {
               className="dash-setup-card__btn"
               style={{ border: "none", cursor: "pointer" }}
             >
-              Open Theme Editor →
+              {t("overview.setup.openEditor")}
             </button>
           </div>
         </div>
         <div className="dash-guide">
-          <h2 className="dash-guide__title">Setting Up Your <em>Theme Editor</em></h2>
-          <p className="dash-guide__sub">Follow these steps once to switch on the wishlist icon and place it exactly where you want it.</p>
+          <h2 className="dash-guide__title">{t("overview.guide.titlePrefix")} <em>{t("overview.guide.titleEm")}</em></h2>
+          <p className="dash-guide__sub">{t("overview.guide.sub")}</p>
           <div className="dash-guide-steps">
             <div className="dash-guide-step">
               <span className="dash-guide-step__num">1</span>
               <div>
-                <p className="dash-guide-step__title">Open the Theme Editor</p>
-                <p className="dash-guide-step__desc">Click "Open Theme Editor" above. This takes you straight into your live theme's customizer with the App Embeds panel ready.</p>
+                <p className="dash-guide-step__title">{t("overview.guide.step1.title")}</p>
+                <p className="dash-guide-step__desc">{t("overview.guide.step1.desc")}</p>
               </div>
             </div>
             <div className="dash-guide-step">
               <span className="dash-guide-step__num">2</span>
               <div>
-                <p className="dash-guide-step__title">Enable the WishKeeper App Embed</p>
-                <p className="dash-guide-step__desc">In the left sidebar, go to App Embeds and toggle WishKeeper on. It automatically places the heart icon next to your cart icon in the header.</p>
+                <p className="dash-guide-step__title">{t("overview.guide.step2.title")}</p>
+                <p className="dash-guide-step__desc">{t("overview.guide.step2.desc")}</p>
               </div>
             </div>
             <div className="dash-guide-step">
               <span className="dash-guide-step__num">3</span>
               <div>
-                <p className="dash-guide-step__title">Pick an Icon Style and Colour</p>
-                <p className="dash-guide-step__desc">With WishKeeper selected in the App Embeds list, open its settings on the left: choose "Icon style" (Heart, Bookmark, or Star) and set "Badge color" to match your brand. Changes preview instantly in the editor.</p>
+                <p className="dash-guide-step__title">{t("overview.guide.step3.title")}</p>
+                <p className="dash-guide-step__desc">{t("overview.guide.step3.desc")}</p>
               </div>
             </div>
             <div className="dash-guide-step">
               <span className="dash-guide-step__num">4</span>
               <div>
-                <p className="dash-guide-step__title">Save</p>
-                <p className="dash-guide-step__desc">Click Save in the top right. Your storefront now shows the wishlist icon live, styled the way you picked, no theme code edits required.</p>
+                <p className="dash-guide-step__title">{t("overview.guide.step4.title")}</p>
+                <p className="dash-guide-step__desc">{t("overview.guide.step4.desc")}</p>
               </div>
             </div>
           </div>
         </div>
         <div className="dash-features">
-          <h2 className="dash-features__title">How <em>WishKeeper</em> Works</h2>
-          <p className="dash-features__sub">Everything your customers and your store get, out of the box.</p>
+          <h2 className="dash-features__title">{t("overview.features.titlePrefix")} <em>{t("overview.features.titleEm")}</em> {t("overview.features.titleSuffix")}</h2>
+          <p className="dash-features__sub">{t("overview.features.sub")}</p>
           <div className="dash-features-grid">
             <div className="dash-feature-card">
               <div className="dash-feature-card__icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
               </div>
-              <p className="dash-feature-card__title">Heart Button</p>
-              <p className="dash-feature-card__desc">Customers tap the heart icon on any product or collection card to save it instantly, no account required.</p>
+              <p className="dash-feature-card__title">{t("overview.features.heart.title")}</p>
+              <p className="dash-feature-card__desc">{t("overview.features.heart.desc")}</p>
             </div>
             <div className="dash-feature-card">
               <div className="dash-feature-card__icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 6h16M4 12h16M4 18h7" strokeLinecap="round" /></svg>
               </div>
-              <p className="dash-feature-card__title">Header Wishlist Icon</p>
-              <p className="dash-feature-card__desc">A wishlist icon with a live item-count badge sits right in your store header, next to the cart.</p>
+              <p className="dash-feature-card__title">{t("overview.features.headerIcon.title")}</p>
+              <p className="dash-feature-card__desc">{t("overview.features.headerIcon.desc")}</p>
             </div>
             <div className="dash-feature-card">
               <div className="dash-feature-card__icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
               </div>
-              <p className="dash-feature-card__title">Customer Wishlist Page</p>
-              <p className="dash-feature-card__desc">A dedicated page where customers view, share, and add their saved items to cart, all at once or one by one.</p>
+              <p className="dash-feature-card__title">{t("overview.features.customerPage.title")}</p>
+              <p className="dash-feature-card__desc">{t("overview.features.customerPage.desc")}</p>
             </div>
             <div className="dash-feature-card">
               <div className="dash-feature-card__icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </div>
-              <p className="dash-feature-card__title">Analytics & Insights</p>
-              <p className="dash-feature-card__desc">Track saves, top products, and shopper activity in real time, right here on this page.</p>
+              <p className="dash-feature-card__title">{t("overview.features.analytics.title")}</p>
+              <p className="dash-feature-card__desc">{t("overview.features.analytics.desc")}</p>
             </div>
             <div className="dash-feature-card">
               <div className="dash-feature-card__icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /><path d="M8.5 6.5a1.5 1.5 0 013 0M19.5 6.5a1.5 1.5 0 01-3 0" /></svg>
               </div>
-              <p className="dash-feature-card__title">Collection Page Hearts</p>
-              <p className="dash-feature-card__desc">The same save icon also appears on every product card in your collection and category grids, so shoppers can save without opening the product page.</p>
+              <p className="dash-feature-card__title">{t("overview.features.collectionHearts.title")}</p>
+              <p className="dash-feature-card__desc">{t("overview.features.collectionHearts.desc")}</p>
             </div>
             <div className="dash-feature-card">
               <div className="dash-feature-card__icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="13.5" cy="6.5" r="3" /><path d="M18 3.5c1 1 1 2.5 0 3.5M3 20l4-1 10-10-3-3L4 16l-1 4z" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </div>
-              <p className="dash-feature-card__title">Custom Icon & Colours</p>
-              <p className="dash-feature-card__desc">Choose Heart, Bookmark, Star, or upload your own SVG, then set the active colour in Settings to match your brand everywhere the icon appears.</p>
+              <p className="dash-feature-card__title">{t("overview.features.customIcon.title")}</p>
+              <p className="dash-feature-card__desc">{t("overview.features.customIcon.desc")}</p>
             </div>
           </div>
         </div>
@@ -240,21 +240,21 @@ export default function Analytics() {
           <svg className="dash-hero__watermark" width="220" height="220" viewBox="0 0 24 24" fill="none">
             <path d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.08C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z" fill="#b8922a" />
           </svg>
-          <div className="dash-hero__eyebrow">Wishlist Intelligence</div>
-          <h2 className="dash-hero__title">Turn Saved Products <em>Into Sales</em></h2>
-          <p className="dash-hero__sub">Every heart click is a signal. WishKeeper turns customer intent into insight, so you always know what your shoppers want next.</p>
+          <div className="dash-hero__eyebrow">{t("overview.hero.eyebrow")}</div>
+          <h2 className="dash-hero__title">{t("overview.hero.titlePrefix")} <em>{t("overview.hero.titleEm")}</em></h2>
+          <p className="dash-hero__sub">{t("overview.hero.sub")}</p>
           <div className="dash-hero__badges">
             <span className="dash-hero__badge">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></svg>
-              Real-time tracking
+              {t("overview.hero.badge1")}
             </span>
             <span className="dash-hero__badge">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="7" r="3" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" /></svg>
-              Customer insight
+              {t("overview.hero.badge2")}
             </span>
             <span className="dash-hero__badge">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              Product trends
+              {t("overview.hero.badge3")}
             </span>
           </div>
         </div>
@@ -264,89 +264,95 @@ export default function Analytics() {
               <span className="dash-panel__title-icon">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v5" strokeLinecap="round" /></svg>
               </span>
-              Explore the App
+              {t("overview.explore.title")}
             </span>
           </div>
-          <p className="dash-pages__sub">Every page in WishKeeper, and exactly what it does for your store.</p>
+          <p className="dash-pages__sub">{t("overview.explore.sub")}</p>
           <div className="dash-pages-grid">
             <PageCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 11l9-8 9 8" strokeLinecap="round" strokeLinejoin="round" /><path d="M5 10v10h14V10" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-              title="Home"
-              desc="Your everyday control room. See total wishlist items, active wishlists, and how many items were added recently, all as clean stat cards you can read in seconds. Below that, a 7-day trend chart shows whether interest is climbing or cooling off, next to a ranked list of your top saved products so you always know what shoppers want most, even before they buy."
+              title={t("overview.explore.home.title")}
+              desc={t("overview.explore.home.desc")}
               onOpen={() => navigate("/app/home")}
               locked={false}
+              t={t}
             />
             <PageCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>}
-              title="Wishlists"
-              desc="Every customer's wishlist, in one searchable table. Filter the whole list by date range (7, 15, 30, 180 days, or all time) to see recent activity at a glance. Select one or many rows to bulk-delete stale entries, or open any customer to see their full add and remove history with product images, so you understand exactly how their wishlist changed over time."
+              title={t("overview.explore.wishlists.title")}
+              desc={t("overview.explore.wishlists.desc")}
               onOpen={() => navigate("/app/wishlist")}
               locked={!hasActivePlan}
+              t={t}
             />
             <PageCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16V8z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>}
-              title="Reports"
-              desc="A per-product table ranking every item by how many times it's been saved to a wishlist, alongside live inventory from your store and its SKU. Alerts Sent and Revenue columns are built in and ready, they'll populate automatically once price-drop email alerts and order attribution go live."
+              title={t("overview.explore.reports.title")}
+              desc={t("overview.explore.reports.desc")}
               onOpen={() => navigate("/app/reports")}
               locked={!hasActivePlan}
+              t={t}
             />
             <PageCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>}
-              title="Settings"
-              desc="The full styling and behaviour control panel for your storefront wishlist. Pick an icon style (Heart, Bookmark, Star) or upload your own SVG, set the active colour to match your brand, and choose which product details show on the wishlist page: title, price, vendor, add-to-cart. Adjust the grid layout, item limits per customer, and the storefront language, all saved instantly and reflected live."
+              title={t("overview.explore.settings.title")}
+              desc={t("overview.explore.settings.desc")}
               onOpen={() => navigate("/app/settings")}
               locked={!hasActivePlan}
+              t={t}
             />
             <PageCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>}
-              title="Billing"
-              desc="Manage your WishKeeper subscription in one place: see your current plan, what's included, and your next billing date. Upgrade, downgrade, or cancel any time directly through Shopify's secure billing, no separate payment setup needed. Every other page in the app, Wishlists and Settings, unlocks automatically the moment a plan is active."
+              title={t("overview.explore.billing.title")}
+              desc={t("overview.explore.billing.desc")}
               onOpen={() => navigate("/app/billing")}
               locked={false}
+              t={t}
             />
             <PageCard
               icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>}
-              title="Custom Wishlist Button"
-              desc="Already have your own 'Add to Wishlist' button somewhere in your theme, not the WishKeeper block? Paste its HTML into Settings and we'll automatically detect it on your product pages and wire up add/remove, no code editing, no CSS selectors."
+              title={t("overview.explore.customButton.title")}
+              desc={t("overview.explore.customButton.desc")}
               onOpen={() => navigate("/app/settings#custom-wishlist-button-section")}
               locked={!hasActivePlan}
+              t={t}
             />
           </div>
         </div>
         <div className="dash-storefront">
           <div className="dash-storefront__head">
-            <span className="dash-storefront__eyebrow">Storefront Preview</span>
-            <h2 className="dash-storefront__title">The Customer <em>Wishlist Page</em></h2>
-            <p className="dash-storefront__sub">This is the page every "Wishlist" link or heart icon on your storefront leads to, where customers manage everything they've saved.</p>
+            <span className="dash-storefront__eyebrow">{t("overview.storefront.eyebrow")}</span>
+            <h2 className="dash-storefront__title">{t("overview.storefront.titlePrefix")} <em>{t("overview.storefront.titleEm")}</em></h2>
+            <p className="dash-storefront__sub">{t("overview.storefront.sub")}</p>
           </div>
           <div className="dash-storefront-grid">
             <div className="dash-storefront-card">
               <span className="dash-storefront-card__icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </span>
-              <p className="dash-storefront-card__title">Saved Products, Laid Out Clearly</p>
-              <p className="dash-storefront-card__desc">Every saved item shows its product image in a clean grid, along with whatever details you've chosen to display: title, price, and vendor.</p>
+              <p className="dash-storefront-card__title">{t("overview.storefront.laidOut.title")}</p>
+              <p className="dash-storefront-card__desc">{t("overview.storefront.laidOut.desc")}</p>
             </div>
             <div className="dash-storefront-card">
               <span className="dash-storefront-card__icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </span>
-              <p className="dash-storefront-card__title">Remove One by One, or All at Once</p>
-              <p className="dash-storefront-card__desc">Customers can unheart a single product to remove just that item, or use the "Clear wishlist" action to empty the entire list in one tap.</p>
+              <p className="dash-storefront-card__title">{t("overview.storefront.removeOne.title")}</p>
+              <p className="dash-storefront-card__desc">{t("overview.storefront.removeOne.desc")}</p>
             </div>
             <div className="dash-storefront-card">
               <span className="dash-storefront-card__icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" strokeLinecap="round" strokeLinejoin="round" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 01-8 0" /></svg>
               </span>
-              <p className="dash-storefront-card__title">Add Everything to Cart Together</p>
-              <p className="dash-storefront-card__desc">An "Add all to cart" action batches every saved item into the cart in one click, turning a wishlist into a checkout in seconds.</p>
+              <p className="dash-storefront-card__title">{t("overview.storefront.addAll.title")}</p>
+              <p className="dash-storefront-card__desc">{t("overview.storefront.addAll.desc")}</p>
             </div>
             <div className="dash-storefront-card">
               <span className="dash-storefront-card__icon">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>
               </span>
-              <p className="dash-storefront-card__title">You Control What Shows</p>
-              <p className="dash-storefront-card__desc">From Settings, toggle exactly which fields appear here: image, title, price, vendor, add-to-cart, plus the grid column count, so it always matches your store's look.</p>
+              <p className="dash-storefront-card__title">{t("overview.storefront.control.title")}</p>
+              <p className="dash-storefront-card__desc">{t("overview.storefront.control.desc")}</p>
             </div>
           </div>
         </div>
@@ -355,13 +361,13 @@ export default function Analytics() {
   );
 }
 
-function PageCard({ icon, title, desc, onOpen, locked }: { icon: JSX.Element; title: string; desc: string; onOpen: () => void; locked: boolean }) {
+function PageCard({ icon, title, desc, onOpen, locked, t }: { icon: JSX.Element; title: string; desc: string; onOpen: () => void; locked: boolean; t: (key: string, vars?: Record<string, string | number>) => string }) {
   return (
     <div className="dash-page-card">
       <div className="dash-page-card__top">
         <span className="dash-page-card__icon">{icon}</span>
         {locked && (
-          <span className="dash-page-card__lock" title="Requires an active plan">
+          <span className="dash-page-card__lock" title={t("overview.explore.requiresPlan")}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" strokeLinecap="round" /></svg>
           </span>
         )}
@@ -374,7 +380,7 @@ function PageCard({ icon, title, desc, onOpen, locked }: { icon: JSX.Element; ti
         onClick={locked ? undefined : onOpen}
         disabled={locked}
       >
-        {locked ? "Subscribe to unlock" : "Open page →"}
+        {locked ? t("overview.explore.subscribeToUnlock") : t("overview.explore.openPage")}
       </button>
     </div>
   );

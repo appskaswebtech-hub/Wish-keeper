@@ -6,7 +6,9 @@ import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { getActiveSubscription } from "../services/billing.server";
 import { authenticate } from "../shopify.server";
-import { findOrCreateStore, getProductReport, getAlertCounts } from "../services/wishlist.server";
+import { findOrCreateStore, getProductReport, getAlertCounts, getStoreSettings } from "../services/wishlist.server";
+import { resolveLanguage, getSessionLocale } from "../i18n/language.server";
+import { getTranslator } from "../i18n/translations";
 import wishlistStyles from "../styles/wishlist.css?url";
 
 export const links = () => [{ rel: "stylesheet", href: wishlistStyles }];
@@ -63,21 +65,25 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     } catch (_) {}
   }
 
-  return data({ shop: session.shop, hasActivePlan, ...report, limit, productInfoMap, alertCounts });
+  const settings = await getStoreSettings(store.id);
+  const language = resolveLanguage(settings?.language, getSessionLocale(session));
+
+  return data({ shop: session.shop, hasActivePlan, ...report, limit, productInfoMap, alertCounts, language });
 };
 
-function BillingModal({ open, onNavigate }: { open: boolean; onNavigate: () => void }) {
+function BillingModal({ open, onNavigate, t }: { open: boolean; onNavigate: () => void; t: (key: string, vars?: Record<string, string | number>) => string }) {
   if (!open) return null;
+  const [bodyBefore, bodyAfter] = t("common.subscribeModal.body", { price: "@@PRICE@@" }).split("@@PRICE@@");
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.45)" }}>
       <div style={{ background: "#fff", borderRadius: 16, padding: "32px 28px", maxWidth: 420, width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", textAlign: "center" }}>
         <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#f9f1e1", border: "1.5px solid rgba(184,146,42,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="1.6" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>
         </div>
-        <p style={{ fontSize: 18, fontWeight: 700, color: "#1a1612", margin: "0 0 8px" }}>Subscribe to continue</p>
-        <p style={{ fontSize: 13, color: "#6b6257", margin: "0 0 20px", lineHeight: 1.6 }}>You need an active plan to use this app. Plans start from <strong style={{ color: "#b8922a" }}>$9.99 / month</strong>.</p>
+        <p style={{ fontSize: 18, fontWeight: 700, color: "#1a1612", margin: "0 0 8px" }}>{t("common.subscribeModal.title")}</p>
+        <p style={{ fontSize: 13, color: "#6b6257", margin: "0 0 20px", lineHeight: 1.6 }}>{bodyBefore}<strong style={{ color: "#b8922a" }}>$9.99 / month</strong>{bodyAfter}</p>
         <button onClick={onNavigate} style={{ width: "100%", padding: "12px 24px", background: "#b8922a", color: "#fff", border: "none", borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-          View Plans
+          {t("common.subscribeModal.cta")}
         </button>
       </div>
     </div>
@@ -95,8 +101,9 @@ const IconBox = () => (
 );
 
 export default function ProductReport() {
-  const { rows, total, page, totalPages, limit, hasActivePlan, productInfoMap, alertCounts } = useLoaderData<typeof loader>();
+  const { rows, total, page, totalPages, limit, hasActivePlan, productInfoMap, alertCounts, language } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const t = getTranslator(language);
   const [modalOpen, setModalOpen] = useState(!hasActivePlan);
 
   const infoMap = productInfoMap as Record<string, { title: string; image: string | null; inventory: number | null; sku: string }>;
@@ -104,20 +111,20 @@ export default function ProductReport() {
   if (rows.length === 0 && page === 1) {
     return (
       <Page>
-        <TitleBar title="Reports" />
-        <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} />
+        <TitleBar title={t("reportsPage.titleEm")} />
+        <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} t={t} />
         <div className="wl-root">
           <div className="wl-header">
             <div className="wl-header__left">
-              <div className="wl-header__eyebrow">Reports</div>
-              <h1 className="wl-header__title">Product <em>Report</em></h1>
+              <div className="wl-header__eyebrow">{t("reportsPage.eyebrow")}</div>
+              <h1 className="wl-header__title">{t("reportsPage.titlePrefix")} <em>{t("reportsPage.titleEm")}</em></h1>
             </div>
           </div>
           <div className="wl-card">
             <div className="wl-empty">
               <div className="wl-empty__icon"><IconBox /></div>
-              <p className="wl-empty__title">No product activity yet</p>
-              <p className="wl-empty__sub">Once customers start saving products, they'll be ranked here with stock and engagement data.</p>
+              <p className="wl-empty__title">{t("reportsPage.empty.title")}</p>
+              <p className="wl-empty__sub">{t("reportsPage.empty.sub")}</p>
             </div>
           </div>
         </div>
@@ -127,13 +134,13 @@ export default function ProductReport() {
 
   return (
     <Page>
-      <TitleBar title="Reports" />
-      <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} />
+      <TitleBar title={t("reportsPage.titleEm")} />
+      <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} t={t} />
       <div className="wl-root">
         <div className="wl-header">
           <div className="wl-header__left">
-            <div className="wl-header__eyebrow">Reports</div>
-            <h1 className="wl-header__title">Product <em>Report</em></h1>
+            <div className="wl-header__eyebrow">{t("reportsPage.eyebrow")}</div>
+            <h1 className="wl-header__title">{t("reportsPage.titlePrefix")} <em>{t("reportsPage.titleEm")}</em></h1>
           </div>
           <div className="wl-header__right">
             <label className="wl-range-filter">
@@ -144,17 +151,17 @@ export default function ProductReport() {
                 className="wl-range-select"
                 value={limit}
                 onChange={(e) => navigate(`?limit=${e.target.value}&page=1`)}
-                aria-label="Products per page"
+                aria-label={t("reportsPage.perPageAriaLabel")}
               >
-                <option value="10">Show 10</option>
-                <option value="20">Show 20</option>
-                <option value="50">Show 50</option>
-                <option value="100">Show 100</option>
+                <option value="10">{t("reportsPage.show", { n: 10 })}</option>
+                <option value="20">{t("reportsPage.show", { n: 20 })}</option>
+                <option value="50">{t("reportsPage.show", { n: 50 })}</option>
+                <option value="100">{t("reportsPage.show", { n: 100 })}</option>
               </select>
             </label>
             <div className="wl-header__count">
               <span className="wl-header__count-num">{total}</span>
-              product{total !== 1 ? "s" : ""} saved
+              {t(total !== 1 ? "reportsPage.totals" : "reportsPage.total", { n: total })}
             </div>
           </div>
         </div>
@@ -163,13 +170,13 @@ export default function ProductReport() {
           <table className="wl-table">
             <thead className="wl-table__head">
               <tr>
-                <th style={{ width: 48 }}>#</th>
-                <th>Product</th>
-                <th>SKU</th>
-                <th>Inventory</th>
-                <th>Wishlist Actions</th>
-                <th>Alerts Sent</th>
-                <th>Revenue</th>
+                <th style={{ width: 48 }}>{t("reportsPage.table.number")}</th>
+                <th>{t("reportsPage.table.product")}</th>
+                <th>{t("reportsPage.table.sku")}</th>
+                <th>{t("reportsPage.table.inventory")}</th>
+                <th>{t("reportsPage.table.wishlistActions")}</th>
+                <th>{t("reportsPage.table.alertsSent")}</th>
+                <th>{t("reportsPage.table.revenue")}</th>
               </tr>
             </thead>
             <tbody>
@@ -192,7 +199,7 @@ export default function ProductReport() {
                         <div className="wl-customer__name">{name}</div>
                       </div>
                     </td>
-                    <td><span style={{ fontSize: 12.5, color: "#6b6257" }}>{info?.sku || "—"}</span></td>
+                    <td><span style={{ fontSize: 12.5, color: "#6b6257" }}>{info?.sku && info.sku.startsWith("Multiple") ? t("reportsPage.table.multiple", { n: info.sku.match(/\d+/)?.[0] || "2" }) : info?.sku || "—"}</span></td>
                     <td>
                       {info?.inventory === null || info?.inventory === undefined ? (
                         <span style={{ fontSize: 12.5, color: "#a39a8e" }}>—</span>
@@ -213,11 +220,11 @@ export default function ProductReport() {
         {totalPages > 1 && (
           <div className="wl-pagination">
             <button className="wl-pagination__btn" disabled={page <= 1} onClick={() => navigate(`?page=${page - 1}&limit=${limit}`)}>
-              <IconChevronLeft />Previous
+              <IconChevronLeft />{t("reportsPage.pagination.previous")}
             </button>
-            <span className="wl-pagination__info">Page <span>{page}</span> of <span>{totalPages}</span></span>
+            <span className="wl-pagination__info">{t("reportsPage.pagination.pageOf", { page, total: totalPages })}</span>
             <button className="wl-pagination__btn" disabled={page >= totalPages} onClick={() => navigate(`?page=${page + 1}&limit=${limit}`)}>
-              Next<IconChevronRight />
+              {t("reportsPage.pagination.next")}<IconChevronRight />
             </button>
           </div>
         )}

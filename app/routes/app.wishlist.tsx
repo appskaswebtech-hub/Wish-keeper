@@ -7,7 +7,9 @@ import { TitleBar } from "@shopify/app-bridge-react";
 import { getActiveSubscription } from "../services/billing.server";
 import { syncShopPlanFromSubscription } from "../utils/planUtils";
 import { authenticate } from "../shopify.server";
-import { findOrCreateStore, getAllWishlists, deleteWishlist } from "../services/wishlist.server";
+import { findOrCreateStore, getAllWishlists, deleteWishlist, getStoreSettings } from "../services/wishlist.server";
+import { resolveLanguage, getSessionLocale } from "../i18n/language.server";
+import { getTranslator, getTranslatedList } from "../i18n/translations";
 import wishlistStyles from "../styles/wishlist.css?url";
 
 export const links = () => [{ rel: "stylesheet", href: wishlistStyles }];
@@ -71,7 +73,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
   }
 
-  return data({ ...data2, shop: session.shop, hasActivePlan, customerMap, range });
+  const settings = await getStoreSettings(store.id);
+  const language = resolveLanguage(settings?.language, getSessionLocale(session));
+
+  return data({ ...data2, shop: session.shop, hasActivePlan, customerMap, range, language });
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -103,16 +108,16 @@ const IconTrash = () => (
   </svg>
 );
 
-function ConfirmDeleteModal({ label, onConfirm, onCancel, isDeleting }: { label: string; onConfirm: () => void; onCancel: () => void; isDeleting: boolean }) {
+function ConfirmDeleteModal({ label, onConfirm, onCancel, isDeleting, t }: { label: string; onConfirm: () => void; onCancel: () => void; isDeleting: boolean; t: (key: string, vars?: Record<string, string | number>) => string }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.45)" }} onClick={onCancel}>
       <div style={{ background: "#fff", borderRadius: 16, padding: "28px 26px", maxWidth: 380, width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#fee2e2", border: "1.5px solid rgba(239,68,68,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
           <IconTrash />
         </div>
-        <p style={{ fontSize: 16, fontWeight: 700, color: "#1a1612", margin: "0 0 8px" }}>Delete this wishlist?</p>
+        <p style={{ fontSize: 16, fontWeight: 700, color: "#1a1612", margin: "0 0 8px" }}>{t("wishlistsPage.delete.confirmTitle")}</p>
         <p style={{ fontSize: 13, color: "#6b6257", margin: "0 0 22px", lineHeight: 1.6 }}>
-          {label}'s wishlist and its full history will be permanently deleted. This cannot be undone.
+          {t("wishlistsPage.delete.confirmBody", { label })}
         </p>
         <div style={{ display: "flex", gap: 10 }}>
           <button
@@ -120,7 +125,7 @@ function ConfirmDeleteModal({ label, onConfirm, onCancel, isDeleting }: { label:
             onClick={onCancel}
             style={{ flex: 1, padding: "11px 16px", background: "#f3f4f6", color: "#374151", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
           >
-            Cancel
+            {t("wishlistsPage.delete.cancel")}
           </button>
           <button
             type="button"
@@ -128,7 +133,7 @@ function ConfirmDeleteModal({ label, onConfirm, onCancel, isDeleting }: { label:
             onClick={onConfirm}
             style={{ flex: 1, padding: "11px 16px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: isDeleting ? "default" : "pointer", opacity: isDeleting ? 0.7 : 1 }}
           >
-            {isDeleting ? "Deleting…" : "Delete"}
+            {isDeleting ? t("wishlistsPage.delete.deleting") : t("wishlistsPage.delete.button")}
           </button>
         </div>
       </div>
@@ -136,7 +141,7 @@ function ConfirmDeleteModal({ label, onConfirm, onCancel, isDeleting }: { label:
   );
 }
 
-function DeleteButton({ wishlistId, label }: { wishlistId: string; label: string }) {
+function DeleteButton({ wishlistId, label, t }: { wishlistId: string; label: string; t: (key: string, vars?: Record<string, string | number>) => string }) {
   const fetcher = useFetcher();
   const isDeleting = fetcher.state !== "idle";
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -148,14 +153,15 @@ function DeleteButton({ wishlistId, label }: { wishlistId: string; label: string
         disabled={isDeleting}
         onClick={() => setConfirmOpen(true)}
         style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "none", border: "none", color: isDeleting ? "#d1d5db" : "#ef4444", cursor: isDeleting ? "default" : "pointer", fontSize: 12, fontWeight: 500, padding: "4px 6px" }}
-        title="Delete wishlist"
+        title={t("wishlistsPage.delete.tooltip")}
       >
-        <IconTrash />{isDeleting ? "Deleting…" : "Delete"}
+        <IconTrash />{isDeleting ? t("wishlistsPage.delete.deleting") : t("wishlistsPage.delete.button")}
       </button>
       {confirmOpen && (
         <ConfirmDeleteModal
           label={label}
           isDeleting={isDeleting}
+          t={t}
           onCancel={() => setConfirmOpen(false)}
           onConfirm={() => {
             fetcher.submit({ wishlistId }, { method: "POST" });
@@ -215,7 +221,7 @@ const IconImagePlaceholder = () => (
   </svg>
 );
 
-function StatusPill({ isAdd }: { isAdd: boolean }) {
+function StatusPill({ isAdd, t }: { isAdd: boolean; t: (key: string, vars?: Record<string, string | number>) => string }) {
   return (
     <span
       style={{
@@ -231,12 +237,12 @@ function StatusPill({ isAdd }: { isAdd: boolean }) {
       }}
     >
       {isAdd ? <IconPlusCircle /> : <IconMinusCircle />}
-      {isAdd ? "Added" : "Removed"}
+      {isAdd ? t("wishlistsPage.history.added") : t("wishlistsPage.history.removed")}
     </span>
   );
 }
 
-function HistoryModal({ wishlistId, customerLabel, onClose }: { wishlistId: string; customerLabel: string; onClose: () => void }) {
+function HistoryModal({ wishlistId, customerLabel, onClose, t }: { wishlistId: string; customerLabel: string; onClose: () => void; t: (key: string, vars?: Record<string, string | number>) => string }) {
   const fetcher = useFetcher<{ activity?: any[]; productMap?: Record<string, { title: string; image: string | null }>; error?: string }>();
 
   if (fetcher.state === "idle" && !fetcher.data) {
@@ -251,8 +257,8 @@ function HistoryModal({ wishlistId, customerLabel, onClose }: { wishlistId: stri
       <div style={{ background: "#fff", borderRadius: 16, padding: "28px 28px 20px", maxWidth: 620, width: "92%", maxHeight: "75vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
           <div>
-            <p style={{ fontSize: 20, fontWeight: 700, color: "#1a1612", margin: 0 }}>Website History</p>
-            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#9ca3af", margin: "6px 0 0" }}>Recent Activity · {customerLabel}</p>
+            <p style={{ fontSize: 20, fontWeight: 700, color: "#1a1612", margin: 0 }}>{t("wishlistsPage.history.title")}</p>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#9ca3af", margin: "6px 0 0" }}>{t("wishlistsPage.history.subtitle", { label: customerLabel })}</p>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 4 }}><IconClose /></button>
         </div>
@@ -267,18 +273,18 @@ function HistoryModal({ wishlistId, customerLabel, onClose }: { wishlistId: stri
             </div>
           )}
           {fetcher.data?.error && (
-            <p style={{ fontSize: 13, color: "#ef4444", textAlign: "center", padding: "40px 0" }}>Could not load history.</p>
+            <p style={{ fontSize: 13, color: "#ef4444", textAlign: "center", padding: "40px 0" }}>{t("wishlistsPage.history.error")}</p>
           )}
           {fetcher.data && activity.length === 0 && (
-            <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "40px 0" }}>No activity recorded yet.</p>
+            <p style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", padding: "40px 0" }}>{t("wishlistsPage.history.empty")}</p>
           )}
           {activity.length > 0 && (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: "left", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9ca3af", padding: "0 0 10px", borderBottom: "1px solid #f1f5f9" }}>Product</th>
-                  <th style={{ textAlign: "left", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9ca3af", padding: "0 0 10px", borderBottom: "1px solid #f1f5f9" }}>Status</th>
-                  <th style={{ textAlign: "left", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9ca3af", padding: "0 0 10px", borderBottom: "1px solid #f1f5f9" }}>Date</th>
+                  <th style={{ textAlign: "left", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9ca3af", padding: "0 0 10px", borderBottom: "1px solid #f1f5f9" }}>{t("wishlistsPage.history.product")}</th>
+                  <th style={{ textAlign: "left", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9ca3af", padding: "0 0 10px", borderBottom: "1px solid #f1f5f9" }}>{t("wishlistsPage.history.status")}</th>
+                  <th style={{ textAlign: "left", fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9ca3af", padding: "0 0 10px", borderBottom: "1px solid #f1f5f9" }}>{t("wishlistsPage.history.date")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -300,7 +306,7 @@ function HistoryModal({ wishlistId, customerLabel, onClose }: { wishlistId: stri
                         </div>
                       </td>
                       <td style={{ padding: "12px 12px 12px 0" }}>
-                        <StatusPill isAdd={isAdd} />
+                        <StatusPill isAdd={isAdd} t={t} />
                       </td>
                       <td style={{ padding: "12px 0" }}>
                         <div style={{ fontSize: 13, color: "#1a1612" }}>{dateStr}</div>
@@ -318,30 +324,31 @@ function HistoryModal({ wishlistId, customerLabel, onClose }: { wishlistId: stri
   );
 }
 
-function BillingModal({ open, onNavigate }: { open: boolean; onNavigate: () => void }) {
+function BillingModal({ open, onNavigate, t, features }: { open: boolean; onNavigate: () => void; t: (key: string, vars?: Record<string, string | number>) => string; features: string[] }) {
   if (!open) return null;
+  const [bodyBefore, bodyAfter] = t("common.subscribeModal.body", { price: "@@PRICE@@" }).split("@@PRICE@@");
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.45)" }}>
       <div style={{ background: "#fff", borderRadius: 16, padding: "32px 28px", maxWidth: 420, width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", textAlign: "center" }}>
         <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#f9f1e1", border: "1.5px solid rgba(184,146,42,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="1.6" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="M9 12l2 2 4-4" /></svg>
         </div>
-        <p style={{ fontSize: 18, fontWeight: 700, color: "#1a1612", margin: "0 0 8px" }}>Subscribe to continue</p>
-        <p style={{ fontSize: 13, color: "#6b6257", margin: "0 0 20px", lineHeight: 1.6 }}>You need an active plan to use this app. Plans start from <strong style={{ color: "#b8922a" }}>$9.99 / month</strong>.</p>
+        <p style={{ fontSize: 18, fontWeight: 700, color: "#1a1612", margin: "0 0 8px" }}>{t("common.subscribeModal.title")}</p>
+        <p style={{ fontSize: 13, color: "#6b6257", margin: "0 0 20px", lineHeight: 1.6 }}>{bodyBefore}<strong style={{ color: "#b8922a" }}>$9.99 / month</strong>{bodyAfter}</p>
         <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 20 }}>
-          {["❤️ Wishlists", "📊 Analytics", "🎨 Customisation"].map((f) => (
+          {features.map((f) => (
             <div key={f} style={{ padding: "7px 12px", background: "#faf8f4", border: "1px solid rgba(184,146,42,0.18)", borderRadius: 8, fontSize: 11, fontWeight: 500, color: "#6b6257" }}>{f}</div>
           ))}
         </div>
         <button onClick={onNavigate} style={{ width: "100%", padding: "12px 24px", background: "#b8922a", color: "#fff", border: "none", borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-          View Plans
+          {t("common.subscribeModal.cta")}
         </button>
       </div>
     </div>
   );
 }
 
-function BulkDeleteBar({ selectedIds, onCleared }: { selectedIds: string[]; onCleared: () => void }) {
+function BulkDeleteBar({ selectedIds, onCleared, t }: { selectedIds: string[]; onCleared: () => void; t: (key: string, vars?: Record<string, string | number>) => string }) {
   const fetcher = useFetcher();
   const isDeleting = fetcher.state !== "idle";
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -356,22 +363,23 @@ function BulkDeleteBar({ selectedIds, onCleared }: { selectedIds: string[]; onCl
   return (
     <>
       <div className="wl-bulkbar">
-        <span className="wl-bulkbar__count">{selectedIds.length} selected</span>
-        <button type="button" className="wl-bulkbar__cancel" onClick={onCleared}>Cancel</button>
+        <span className="wl-bulkbar__count">{t("wishlistsPage.bulkBar.selected", { n: selectedIds.length })}</span>
+        <button type="button" className="wl-bulkbar__cancel" onClick={onCleared}>{t("wishlistsPage.bulkBar.cancel")}</button>
         <button
           type="button"
           className="wl-bulkbar__delete"
           disabled={isDeleting}
           onClick={() => setConfirmOpen(true)}
         >
-          <IconTrash />{isDeleting ? "Deleting…" : "Delete selected"}
+          <IconTrash />{isDeleting ? t("wishlistsPage.bulkBar.deleting") : t("wishlistsPage.bulkBar.deleteSelected")}
         </button>
       </div>
       {confirmOpen && (
         <ConfirmDeleteModal
-          label={`${selectedIds.length} selected wishlist${selectedIds.length !== 1 ? "s" : ""}`}
+          label={t(selectedIds.length !== 1 ? "wishlistsPage.delete.selectedLabelPlural" : "wishlistsPage.delete.selectedLabel", { n: selectedIds.length })}
           isDeleting={isDeleting}
-          onCancel={() => setConfirmOpen(false)} 
+          t={t}
+          onCancel={() => setConfirmOpen(false)}
           onConfirm={() => {
             fetcher.submit({ wishlistIds: JSON.stringify(selectedIds) }, { method: "POST" });
             setConfirmOpen(false);
@@ -383,8 +391,10 @@ function BulkDeleteBar({ selectedIds, onCleared }: { selectedIds: string[]; onCl
 }
 
 export default function WishlistAdmin() {
-  const { wishlists, total, page, totalPages, hasActivePlan, customerMap, range } = useLoaderData<typeof loader>();
+  const { wishlists, total, page, totalPages, hasActivePlan, customerMap, range, language } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const t = getTranslator(language);
+  const subscribeFeatures = getTranslatedList(language, "common.subscribeModal.features");
   const [modalOpen, setModalOpen] = useState(!hasActivePlan);
   const [historyFor, setHistoryFor] = useState<{ id: string; label: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -450,13 +460,13 @@ export default function WishlistAdmin() {
   if (wishlists.length === 0 && page === 1) {
     return (
       <Page>
-        <TitleBar title="Wishlists" />
-        <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} />
+        <TitleBar title={t("wishlistsPage.titleEm")} />
+        <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} t={t} features={subscribeFeatures} />
         <div className="wl-root">
           <div className="wl-header">
             <div className="wl-header__left">
-              <div className="wl-header__eyebrow">Customer Data</div>
-              <h1 className="wl-header__title">Customer <em>Wishlists</em></h1>
+              <div className="wl-header__eyebrow">{t("wishlistsPage.eyebrow")}</div>
+              <h1 className="wl-header__title">{t("wishlistsPage.titlePrefix")} <em>{t("wishlistsPage.titleEm")}</em></h1>
             </div>
             <div className="wl-header__right">
               <label className="wl-range-filter">
@@ -467,29 +477,27 @@ export default function WishlistAdmin() {
                   className="wl-range-select"
                   value={range}
                   onChange={(e) => navigate(`?range=${e.target.value}`)}
-                  aria-label="Filter by last active"
+                  aria-label={t("wishlistsPage.filterAriaLabel")}
                 >
-                  <option value="7">Last 7 days</option>
-                  <option value="15">Last 15 days</option>
-                  <option value="30">Last 30 days</option>
-                  <option value="180">Last 6 months</option>
-                  <option value="all">All time</option>
+                  <option value="7">{t("wishlistsPage.range.last7")}</option>
+                  <option value="15">{t("wishlistsPage.range.last15")}</option>
+                  <option value="30">{t("wishlistsPage.range.last30")}</option>
+                  <option value="180">{t("wishlistsPage.range.last180")}</option>
+                  <option value="all">{t("wishlistsPage.range.all")}</option>
                 </select>
               </label>
               <div className="wl-header__count">
                 <span className="wl-header__count-num">0</span>
-                wishlists total
+                {t("wishlistsPage.totals", { n: 0 })}
               </div>
             </div>
           </div>
           <div className="wl-card" {...dragScrollProps}>
             <div className="wl-empty">
               <div className="wl-empty__icon"><IconHeart /></div>
-              <p className="wl-empty__title">{range === "all" ? "No wishlists yet" : "No wishlists in this time range"}</p>
+              <p className="wl-empty__title">{range === "all" ? t("wishlistsPage.empty.titleAll") : t("wishlistsPage.empty.titleRange")}</p>
               <p className="wl-empty__sub">
-                {range === "all"
-                  ? "Wishlists will appear here once customers start saving products to their favourites."
-                  : "Try a wider time range to see more results."}
+                {range === "all" ? t("wishlistsPage.empty.subAll") : t("wishlistsPage.empty.subRange")}
               </p>
             </div>
           </div>
@@ -500,13 +508,13 @@ export default function WishlistAdmin() {
 
   return (
     <Page>
-      <TitleBar title="Wishlists" />
-      <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} />
+      <TitleBar title={t("wishlistsPage.titleEm")} />
+      <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} t={t} features={subscribeFeatures} />
       <div className="wl-root">
         <div className="wl-header">
           <div className="wl-header__left">
-            <div className="wl-header__eyebrow">Customer Data</div>
-            <h1 className="wl-header__title">Customer <em>Wishlists</em></h1>
+            <div className="wl-header__eyebrow">{t("wishlistsPage.eyebrow")}</div>
+            <h1 className="wl-header__title">{t("wishlistsPage.titlePrefix")} <em>{t("wishlistsPage.titleEm")}</em></h1>
           </div>
           <div className="wl-header__right">
             <label className="wl-range-filter">
@@ -517,24 +525,24 @@ export default function WishlistAdmin() {
                 className="wl-range-select"
                 value={range}
                 onChange={(e) => navigate(`?range=${e.target.value}`)}
-                aria-label="Filter by last active"
+                aria-label={t("wishlistsPage.filterAriaLabel")}
               >
-                <option value="7">Last 7 days</option>
-                <option value="15">Last 15 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="180">Last 6 months</option>
-                <option value="all">All time</option>
+                <option value="7">{t("wishlistsPage.range.last7")}</option>
+                <option value="15">{t("wishlistsPage.range.last15")}</option>
+                <option value="30">{t("wishlistsPage.range.last30")}</option>
+                <option value="180">{t("wishlistsPage.range.last180")}</option>
+                <option value="all">{t("wishlistsPage.range.all")}</option>
               </select>
             </label>
             <div className="wl-header__count">
               <span className="wl-header__count-num">{total}</span>
-              wishlist{total !== 1 ? "s" : ""} total
+              {t(total !== 1 ? "wishlistsPage.totals" : "wishlistsPage.total", { n: total })}
             </div>
           </div>
         </div>
 
         {selectedIds.size > 0 && (
-          <BulkDeleteBar selectedIds={[...selectedIds]} onCleared={() => setSelectedIds(new Set())} />
+          <BulkDeleteBar selectedIds={[...selectedIds]} onCleared={() => setSelectedIds(new Set())} t={t} />
         )}
 
         <div className="wl-card" {...dragScrollProps}>
@@ -542,12 +550,12 @@ export default function WishlistAdmin() {
             <thead className="wl-table__head">
               <tr>
                 <th style={{ width: 36 }}>
-                  <input type="checkbox" checked={allOnPageSelected} onChange={toggleAll} aria-label="Select all" />
+                  <input type="checkbox" checked={allOnPageSelected} onChange={toggleAll} aria-label={t("wishlistsPage.table.selectAll")} />
                 </th>
-                <th style={{ width: 48 }}>#</th>
-                <th>Customer</th>
-                <th>Items</th>
-                <th>Last Active</th>
+                <th style={{ width: 48 }}>{t("wishlistsPage.table.number")}</th>
+                <th>{t("wishlistsPage.table.customer")}</th>
+                <th>{t("wishlistsPage.table.items")}</th>
+                <th>{t("wishlistsPage.table.lastActive")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -557,7 +565,7 @@ export default function WishlistAdmin() {
                 const initials = getInitials(wl.customerId, isGuest);
                 const customer = !isGuest ? (customerMap as any)[wl.customerId] : null;
                 const displayName = isGuest
-                  ? "Guest"
+                  ? t("wishlistsPage.table.guest")
                   : customer?.name || customer?.email || (wl.customerId.length > 22 ? wl.customerId.slice(0, 22) + "…" : wl.customerId);
                 const lastActive = new Date(wl.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
                 const itemCount: number = wl._count.items;
@@ -570,7 +578,7 @@ export default function WishlistAdmin() {
                         type="checkbox"
                         checked={selectedIds.has(wl.id)}
                         onChange={() => toggleOne(wl.id)}
-                        aria-label={`Select ${displayName}`}
+                        aria-label={t("wishlistsPage.table.select", { name: displayName })}
                       />
                     </td>
                     <td style={{ color: "#1a1612", fontWeight: 600, fontSize: 13 }}>{serialNo}</td>
@@ -589,13 +597,13 @@ export default function WishlistAdmin() {
                         onClick={() => setHistoryFor({ id: wl.id, label: displayName })}
                         className={`wl-badge ${itemCount > 0 ? "wl-badge--items" : "wl-badge--zero"}`}
                         style={{ border: "none", cursor: "pointer", font: "inherit" }}
-                        title="View history"
+                        title={t("wishlistsPage.table.viewHistory")}
                       >
-                        {itemCount} {itemCount === 1 ? "item" : "items"}
+                        {itemCount} {t(itemCount === 1 ? "wishlistsPage.table.item" : "wishlistsPage.table.items2")}
                       </button>
                     </td>
                     <td><span className="wl-date">{lastActive}</span></td>
-                    <td><DeleteButton wishlistId={wl.id} label={displayName} /></td>
+                    <td><DeleteButton wishlistId={wl.id} label={displayName} t={t} /></td>
                   </tr>
                 );
               })}
@@ -606,17 +614,17 @@ export default function WishlistAdmin() {
         {totalPages > 1 && (
           <div className="wl-pagination">
             <button className="wl-pagination__btn" disabled={page <= 1} onClick={() => navigate(`?page=${page - 1}&range=${range}`)}>
-              <IconChevronLeft />Previous
+              <IconChevronLeft />{t("wishlistsPage.pagination.previous")}
             </button>
-            <span className="wl-pagination__info">Page <span>{page}</span> of <span>{totalPages}</span></span>
+            <span className="wl-pagination__info">{t("wishlistsPage.pagination.pageOf", { page, total: totalPages })}</span>
             <button className="wl-pagination__btn" disabled={page >= totalPages} onClick={() => navigate(`?page=${page + 1}&range=${range}`)}>
-              Next<IconChevronRight />
+              {t("wishlistsPage.pagination.next")}<IconChevronRight />
             </button>
           </div>
         )}
       </div>
       {historyFor && (
-        <HistoryModal wishlistId={historyFor.id} customerLabel={historyFor.label} onClose={() => setHistoryFor(null)} />
+        <HistoryModal wishlistId={historyFor.id} customerLabel={historyFor.label} onClose={() => setHistoryFor(null)} t={t} />
       )}
     </Page>
   );

@@ -3,29 +3,35 @@ import { Outlet, useLoaderData, useNavigation, useRouteError } from "react-route
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
 import { authenticate } from "../shopify.server";
+import { getStoreSettingsByShop } from "../services/wishlist.server";
+import { resolveLanguage, getSessionLocale } from "../i18n/language.server";
+import { getTranslator } from "../i18n/translations";
 import loaderStyles from "../styles/loader.css?url";
 
 export const links = () => [{ rel: "stylesheet", href: loaderStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
-  return { apiKey: process.env.SHOPIFY_API_KEY || "" };
+  const { session } = await authenticate.admin(request);
+  const settings = await getStoreSettingsByShop(session.shop);
+  const language = resolveLanguage(settings?.language, getSessionLocale(session));
+  return { apiKey: process.env.SHOPIFY_API_KEY || "", language };
 };
 
 export default function App() {
-  const { apiKey } = useLoaderData<typeof loader>();
+  const { apiKey, language } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
   const isNavigating = navigation.state === "loading";
+  const t = getTranslator(language);
 
   return (
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
-        <s-link href="/app">Overview</s-link>
-        <s-link href="/app/home">Home</s-link>
-        <s-link href="/app/wishlist">Wishlists</s-link>
-        <s-link href="/app/reports">Reports</s-link>
-        <s-link href="/app/settings">Settings</s-link>
-        <s-link href="/app/billing">Billing</s-link>
+        <s-link href="/app">{t("nav.overview")}</s-link>
+        <s-link href="/app/home">{t("nav.home")}</s-link>
+        <s-link href="/app/wishlist">{t("nav.wishlists")}</s-link>
+        <s-link href="/app/reports">{t("nav.reports")}</s-link>
+        <s-link href="/app/settings">{t("nav.settings")}</s-link>
+        <s-link href="/app/billing">{t("nav.billing")}</s-link>
       </s-app-nav>
       {isNavigating && (
         <div className="wk-loader-overlay">

@@ -19,6 +19,9 @@ import {
   cancelSubscription,
   type PlanKey,
 } from "../services/billing.server";
+import { getStoreSettingsByShop } from "../services/wishlist.server";
+import { resolveLanguage, getSessionLocale } from "../i18n/language.server";
+import { getTranslator, getTranslatedList } from "../i18n/translations";
 import billingStyles from "../styles/billing.css?url";
 
 export const links = () => [{ rel: "stylesheet", href: billingStyles }];
@@ -27,7 +30,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { admin, session } = await authenticate.admin(request);
   const subscription = await getActiveSubscription(admin);
   const activePlanKey = getActivePlanKey(subscription);
-  return data({ subscription, activePlanKey, shop: session.shop, plans: PLANS });
+  const settings = await getStoreSettingsByShop(session.shop);
+  const language = resolveLanguage(settings?.language, getSessionLocale(session));
+  return data({ subscription, activePlanKey, shop: session.shop, plans: PLANS, language });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -77,12 +82,15 @@ const IconCalendar = () => (
 );
 
 export default function BillingPage() {
-  const { subscription, activePlanKey, plans } = useLoaderData<typeof loader>();
+  const { subscription, activePlanKey, plans, language } = useLoaderData<typeof loader>();
   const actionData = useActionData<{ confirmationUrl?: string; success?: boolean }>();
   const submit = useSubmit();
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isLoading = navigation.state !== "idle";
+  const t = getTranslator(language);
+  const basicFeatures = getTranslatedList(language, "billing.basicFeatures");
+  const proFeatures = getTranslatedList(language, "billing.proFeatures");
 
   useEffect(() => {
     if (actionData?.confirmationUrl) {
@@ -103,9 +111,9 @@ export default function BillingPage() {
 
   const handleCancel = useCallback(() => {
     if (!subscription?.id) return;
-    if (!confirm("Are you sure you want to cancel your subscription?")) return;
+    if (!confirm(t("billing.confirmCancel"))) return;
     submit({ intent: "cancel", subscriptionId: subscription.id }, { method: "POST" });
-  }, [submit, subscription]);
+  }, [submit, subscription, t]);
 
   const nextBilling = subscription?.currentPeriodEnd
     ? new Date(subscription.currentPeriodEnd).toLocaleDateString("en-US", {
@@ -115,13 +123,13 @@ export default function BillingPage() {
 
   return (
     <Page>
-      <TitleBar title="Billing & Plans" />
+      <TitleBar title={t("billing.titleBar")} />
       <div className="bl-root">
         <div className="bl-header">
           <div className="bl-header__left">
-            <div className="bl-header__eyebrow">Subscription</div>
-            <h1 className="bl-header__title">Billing &amp; <em>Plans</em></h1>
-            <p className="bl-header__sub">Choose the plan that fits your store. Upgrade or cancel anytime.</p>
+            <div className="bl-header__eyebrow">{t("billing.eyebrow")}</div>
+            <h1 className="bl-header__title">{t("billing.headingPrefix")} <em>{t("billing.headingEmphasis")}</em></h1>
+            <p className="bl-header__sub">{t("billing.sub")}</p>
           </div>
         </div>
 
@@ -129,12 +137,12 @@ export default function BillingPage() {
           <div className="bl-banner">
             <div className="bl-banner__icon" style={{ color: "var(--green)" }}><IconShield /></div>
             <div className="bl-banner__body">
-              <p className="bl-banner__title">You&rsquo;re on the {activePlanKey?.toUpperCase()} plan</p>
+              <p className="bl-banner__title">{t("billing.onPlan", { plan: activePlanKey?.toUpperCase() || "" })}</p>
               {nextBilling && (
-                <p className="bl-banner__sub"><IconCalendar /> &nbsp;Next billing date: {nextBilling}</p>
+                <p className="bl-banner__sub"><IconCalendar /> &nbsp;{t("billing.nextBilling", { date: nextBilling })}</p>
               )}
             </div>
-            <span className="bl-banner__badge"><IconCheck size={9} /> Active</span>
+            <span className="bl-banner__badge"><IconCheck size={9} /> {t("billing.active")}</span>
           </div>
         )}
 
@@ -148,25 +156,25 @@ export default function BillingPage() {
 
             return (
               <div key={planKey} className={["bl-plan-card", isActive ? "bl-plan-card--active" : "", isPro ? "bl-plan-card--pro" : ""].join(" ")}>
-                {isPro && !isActive && <div className="bl-plan-card__popular">Most Popular</div>}
+                {isPro && !isActive && <div className="bl-plan-card__popular">{t("billing.mostPopular")}</div>}
 
                 <div className="bl-plan-card__head">
                   <h2 className="bl-plan-card__name">{planKey.charAt(0).toUpperCase() + planKey.slice(1)}</h2>
                   <div className="bl-plan-card__price-row">
                     <span className="bl-plan-card__currency">$</span>
                     <span className="bl-plan-card__price">{plan.price}</span>
-                    <span className="bl-plan-card__period">/ month</span>
+                    <span className="bl-plan-card__period">{t("billing.perMonth")}</span>
                   </div>
                   {plan.trialDays > 0 && !isActive && (
-                    <span className="bl-plan-card__trial"><IconStar /> {plan.trialDays}-day free trial</span>
+                    <span className="bl-plan-card__trial"><IconStar /> {t("billing.trial", { days: plan.trialDays })}</span>
                   )}
                 </div>
 
                 <div className="bl-plan-card__body">
                   <div>
-                    <div className="bl-plan-card__features-label">What&rsquo;s included</div>
+                    <div className="bl-plan-card__features-label">{t("billing.featuresIncluded")}</div>
                     <ul className="bl-plan-card__features">
-                      {plan.features.map((f: string) => (
+                      {(isPro ? proFeatures : basicFeatures).map((f: string) => (
                         <li key={f} className="bl-plan-card__feature">
                           <span className={`bl-plan-card__feature-check ${isPro ? "bl-plan-card__feature-check--violet" : "bl-plan-card__feature-check--gold"}`}>
                             <IconCheck size={8} />
@@ -183,22 +191,22 @@ export default function BillingPage() {
                   {isActive ? (
                     <>
                       <button className="bl-btn bl-btn--current" disabled>
-                        <IconCheck size={11} /> Current Plan
+                        <IconCheck size={11} /> {t("billing.currentPlan")}
                       </button>
                       {subscription?.id && (
                         <button className="bl-btn bl-btn--outline" onClick={handleCancel} disabled={isLoading}>
-                          {isCancelling ? <><span className="bl-spinner" /> Cancelling…</> : "Cancel Subscription"}
+                          {isCancelling ? <><span className="bl-spinner" /> {t("billing.cancelling")}</> : t("billing.cancelSubscription")}
                         </button>
                       )}
                     </>
                   ) : (
                     <button className={`bl-btn ${isPro ? "bl-btn--violet" : "bl-btn--gold"}`} onClick={() => handleSubscribe(planKey)} disabled={isLoading}>
                       {isCurrentlyLoading ? (
-                        <><span className="bl-spinner" /> Processing…</>
+                        <><span className="bl-spinner" /> {t("billing.processing")}</>
                       ) : isPro ? (
-                        <><IconStar /> Upgrade to Pro</>
+                        <><IconStar /> {t("billing.upgradeToPro")}</>
                       ) : (
-                        <><IconCheck size={11} /> Get Basic Plan</>
+                        <><IconCheck size={11} /> {t("billing.getBasicPlan")}</>
                       )}
                     </button>
                   )}

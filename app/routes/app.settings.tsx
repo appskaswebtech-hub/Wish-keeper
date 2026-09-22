@@ -257,14 +257,14 @@ export default function Settings() {
               <ToggleRow label={t("settings.pageDisplay.showItemCount")} checked={form.showItemCount} onChange={(v) => set("showItemCount", v)} />
               <div className="st-divider" />
               <div className="st-field">
-                <label className="st-field__label">Wishlist opens as</label>
+                <label className="st-field__label">{t("settings.pageDisplay.wishlistOpensAs")}</label>
                 <div className="st-field__select-wrap">
                   <select className="st-field__select" value={form.wishlistDisplayMode} onChange={(e) => set("wishlistDisplayMode", e.target.value)}>
-                    <option value="page">Full Page</option>
-                    <option value="popup">Popup Drawer</option>
+                    <option value="page">{t("settings.pageDisplay.fullPage")}</option>
+                    <option value="popup">{t("settings.pageDisplay.popupDrawer")}</option>
                   </select>
                 </div>
-                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>Full Page sends customers to a dedicated wishlist page. Popup Drawer slides the wishlist in over whatever page they're on, without navigating away.</div>
+                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>{t("settings.pageDisplay.wishlistOpensAsHint")}</div>
               </div>
               <div className="st-divider" />
               <div className="st-field">
@@ -294,7 +294,13 @@ export default function Settings() {
               <div className="st-divider" />
               <div className="st-field">
                 <label className="st-field__label">{t("settings.iconAppearance.iconStyle")}</label>
-                <div className="st-icon-picker">
+                {form.customIconSvg && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--gold-bg)", border: "1px solid var(--gold-border)", borderRadius: "var(--radius-sm)", padding: "8px 12px", fontSize: 12, color: "var(--gold)", marginBottom: 10 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                    {t("settings.iconAppearance.svgActiveNotice")}
+                  </div>
+                )}
+                <div className="st-icon-picker" style={form.customIconSvg ? { opacity: 0.4, pointerEvents: "none" } : undefined}>
                   {([
                     { value: "heart", Icon: IconHeart, label: t("settings.iconAppearance.icons.heart") },
                     { value: "bookmark", Icon: IconBookmark, label: t("settings.iconAppearance.icons.bookmark") },
@@ -302,7 +308,7 @@ export default function Settings() {
                     { value: "gift", label: t("settings.iconAppearance.icons.gift"), Icon: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg> },
                     { value: "bell", label: t("settings.iconAppearance.icons.bell"), Icon: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> },
                   ] as const).map(({ value, Icon, label }) => (
-                    <button key={value} type="button" className={`st-icon-option${form.iconStyle === value ? " active" : ""}`} onClick={() => set("iconStyle", value)}>
+                    <button key={value} type="button" disabled={!!form.customIconSvg} className={`st-icon-option${form.iconStyle === value ? " active" : ""}`} onClick={() => set("iconStyle", value)}>
                       <Icon size={22} />
                       {label}
                     </button>
@@ -409,17 +415,17 @@ export default function Settings() {
                 <div className="st-card__icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
                 </div>
-                <h2 className="st-card__title">Custom Wishlist Button</h2>
+                <h2 className="st-card__title">{t("settings.customButton.title")}</h2>
               </div>
-              <p className="st-card__desc">Already have your own "Add to Wishlist" button in your theme? Paste its HTML and we'll wire it up automatically — no code editing needed.</p>
+              <p className="st-card__desc">{t("settings.customButton.desc")}</p>
             </div>
             <div className="st-card__body">
               <div className="st-code-window">
                 <div className="st-code-window__head">
-                  <span className="st-code-window__label">Button HTML</span>
+                  <span className="st-code-window__label">{t("settings.customButton.htmlLabel")}</span>
                 </div>
                 <p style={{ fontSize: 11, color: "var(--text-muted)", margin: "10px 14px 0", lineHeight: 1.5 }}>
-                  Tip: copy it from your theme code, or right-click the button on your storefront and choose "Inspect" → copy the element's HTML.
+                  {t("settings.customButton.tip")}
                 </p>
                 <textarea
                   ref={customButtonTextareaRef}
@@ -439,15 +445,15 @@ export default function Settings() {
                 <div className="st-card__icon">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><path d="M4 4h16v16H4z" /><path d="M22 6l-10 7L2 6" /></svg>
                 </div>
-                <h2 className="st-card__title">Email Alerts</h2>
+                <h2 className="st-card__title">{t("settings.emailAlerts.title")}</h2>
               </div>
-              <p className="st-card__desc">Notify customers by email when a wishlisted product is back in stock, drops in price, or is running low on stock.</p>
+              <p className="st-card__desc">{t("settings.emailAlerts.desc")}</p>
             </div>
             <div className="st-card__body">
-              <ToggleRow label="Enable email alerts" hint="Sends back-in-stock, price-drop and low-stock emails to customers who saved the product." checked={form.alertsEnabled} onChange={(v) => set("alertsEnabled", v)} />
+              <ToggleRow label={t("settings.emailAlerts.enable")} hint={t("settings.emailAlerts.enableHint")} checked={form.alertsEnabled} onChange={(v) => set("alertsEnabled", v)} />
               <div className="st-divider" />
               <div className="st-field">
-                <label className="st-field__label">Low stock threshold</label>
+                <label className="st-field__label">{t("settings.emailAlerts.lowStockThreshold")}</label>
                 <input
                   type="number"
                   min={1}
@@ -456,12 +462,12 @@ export default function Settings() {
                   value={form.lowStockThreshold}
                   onChange={(e) => set("lowStockThreshold", e.target.value)}
                 />
-                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>Customers get a "low stock" email once a saved product's inventory falls to or below this number of units.</div>
+                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>{t("settings.emailAlerts.lowStockHint")}</div>
               </div>
               <div className="st-divider" />
               <div className="st-field">
-                <label className="st-field__label">Sender email</label>
-                <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 10 }}>Choose how alert emails get sent. Leave it on Default to use WishKeeper's built-in email, no setup needed.</div>
+                <label className="st-field__label">{t("settings.emailAlerts.senderEmailLabel")}</label>
+                <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 10 }}>{t("settings.emailAlerts.senderEmailDesc")}</div>
                 <div className="st-field__select-wrap" style={{ maxWidth: 320 }}>
                   <select
                     className="st-field__select"
@@ -476,9 +482,9 @@ export default function Settings() {
                       }
                     }}
                   >
-                    <option value="default">WishKeeper Default (no setup)</option>
-                    <option value="gmail">Google Workspace / Gmail</option>
-                    <option value="custom">Custom Domain (cPanel / other host)</option>
+                    <option value="default">{t("settings.emailAlerts.senderOptionDefault")}</option>
+                    <option value="gmail">{t("settings.emailAlerts.senderOptionGmail")}</option>
+                    <option value="custom">{t("settings.emailAlerts.senderOptionCustom")}</option>
                   </select>
                 </div>
               </div>

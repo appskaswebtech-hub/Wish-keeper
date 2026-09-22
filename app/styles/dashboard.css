@@ -1735,4 +1735,10 @@
 .Polaris-Page .dash-header__title {
    font-size: 24px;
 } 
+
+.Polaris-Page .dash-root {
+    gap: 10px;
+    padding: 10px;
+}
+
 }

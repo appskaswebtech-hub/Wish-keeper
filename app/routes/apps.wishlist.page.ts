@@ -33,7 +33,7 @@
     .wl-title-deco.wl-loaded{opacity:1;transform:scaleX(1)}
     .wl-deco-line{height:1.5px;width:44px;background:linear-gradient(90deg,transparent,#b8922a);opacity:0.5;border-radius:2px}
     .wl-deco-line--right{background:linear-gradient(90deg,#b8922a,transparent)}
-    .wl-deco-heart{width:14px;height:14px;color:#b8922a}
+    .wl-deco-heart{width:14px;height:14px;color:var(--wl-primary,#b8922a)}
     .wl-count{font-size:12.5px;color:#a39a8e;margin-top:2px;letter-spacing:0.03em}
     .wl-share-btn{position:absolute!important;right:0!important;top:6px!important;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid rgba(184,146,42,0.28);border-radius:100px;background:#fff;cursor:pointer;font-size:12.5px;font-weight:500;color:#4a4238;transition:border-color 0.2s,color 0.2s}
     .wl-share-btn:hover{border-color:#b8922a;color:#b8922a}
@@ -121,10 +121,6 @@
       </button>
     </div>
     <div class="wl-actionbar" id="wl-actionbar">
-      <button type="button" class="wl-actionbar-btn" id="wl-addall-btn" onclick="window.__wlAddAllToCart()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        <span id="wl-addall-label">Add wishlist to cart</span>
-      </button>
       <button type="button" class="wl-actionbar-btn wl-actionbar-btn--danger" id="wl-clear-btn" onclick="window.__wlClearWishlist()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
         <span id="wl-clear-label">Clear wishlist</span>
@@ -296,7 +292,8 @@
         var s = data.settings || {};
 
         if (s.gridColumns) document.documentElement.style.setProperty("--wl-columns", s.gridColumns);
-        if (s.activeColor) document.documentElement.style.setProperty("--wl-primary", s.activeColor);
+        var wlPrimaryColor = s.customIconColor || s.activeColor;
+        if (wlPrimaryColor) document.documentElement.style.setProperty("--wl-primary", wlPrimaryColor);
         if (s.customCss && !document.getElementById("wl-custom-css")) {
           var style = document.createElement("style");
           style.id = "wl-custom-css";
@@ -315,7 +312,6 @@
         if (items.length === 0) { showEmpty(); return; }
 
         document.getElementById("wl-actionbar").style.display = "flex";
-        if (s.showAddToCart === false) document.getElementById("wl-addall-btn").style.display = "none";
 
         storeSettings = s;
         allItems = items;

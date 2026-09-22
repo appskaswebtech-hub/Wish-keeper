@@ -144,14 +144,14 @@ export default function Analytics() {
                 Enabled
               </span>
             )}
-            <a
-              href={`https://${shop}/admin/themes/current/editor?context=apps`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => window.open(`https://${shop}/admin/themes/current/editor?context=apps`, "_blank", "noopener,noreferrer")}
               className="dash-setup-card__btn"
+              style={{ border: "none", cursor: "pointer" }}
             >
               Open Theme Editor →
-            </a>
+            </button>
           </div>
         </div>
         <div className="dash-guide">

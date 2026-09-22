@@ -511,4 +511,11 @@ body .wl-table__row:last-child {
     border-bottom: 1px solid #0000000a
 }
 
+.Polaris-Page .wl-root button.wl-badge {
+    font-size: 14px !important;
+}
+.Polaris-Page .wl-header {
+    padding: 22px;
+}
+
 }

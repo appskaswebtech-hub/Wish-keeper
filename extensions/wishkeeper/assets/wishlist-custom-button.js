@@ -87,6 +87,26 @@
     return match ? match[1] : null;
   }
 
+  // For buttons living inside a product card or a quick-view popup (home
+  // page, collection page), the page URL doesn't identify a single product.
+  // Instead, walk up from the button and look for a nearby link to that
+  // exact product (a product image/title link, or a "View full details"
+  // link) within the same card/popup, and pull the handle from its href.
+  function findNearbyProductHandle(btn) {
+    var el = btn;
+    var depth = 0;
+    while (el && depth < 8) {
+      var link = el.querySelector && el.querySelector('a[href*="/products/"]');
+      if (link) {
+        var match = link.getAttribute("href").match(/\/products\/([a-zA-Z0-9_-]+)/);
+        if (match) return match[1];
+      }
+      el = el.parentElement;
+      depth++;
+    }
+    return null;
+  }
+
   function init() {
     var cfg = window.__wlCustomBtnConfig;
     if (!cfg) { console.warn(LOG, "no config found on window.__wlCustomBtnConfig"); return; }
@@ -166,8 +186,8 @@
       btn.dataset.wlCustomInitialized = "true";
       console.log(LOG, "setting up button", btn);
 
-      var handle = btn.dataset.handle || getPageProductHandle();
-      if (!handle) { console.warn(LOG, "button has no data-handle and no product could be resolved from the page URL, skipping", btn); return; }
+      var handle = btn.dataset.handle || findNearbyProductHandle(btn) || getPageProductHandle();
+      if (!handle) { console.warn(LOG, "button has no data-handle and no product could be resolved nearby or from the page URL, skipping", btn); return; }
 
       var addText = btn.dataset.textAdd || btn.textContent.trim() || "Add to Wishlist";
       var removeText = btn.dataset.textRemove || "In Wishlist";

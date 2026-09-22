@@ -515,4 +515,11 @@
     width: 34px;
     height: 34px;
 }
+
+.Polaris-Page .bl-plans-grid {
+    grid-template-columns: 1fr;
+}
+.Polaris-Page .bl-banner__badge {
+    font-size: 10px;
+}
 }

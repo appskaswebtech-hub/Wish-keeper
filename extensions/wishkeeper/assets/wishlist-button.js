@@ -289,6 +289,7 @@
           var imgSrc = imgEl ? imgEl.src : null;
           var productName = titleEl ? titleEl.textContent.trim() : null;
           wlToast(action === "add" ? textAddedToast : textRemovedToast, action === "add" ? "add" : "remove", imgSrc, productName);
+          if (window.__wlBumpBadge) window.__wlBumpBadge(action === "add" ? 1 : -1);
           if (window.__wlRefreshBadge) window.__wlRefreshBadge();
         })
         .catch(function () { setActive(isActive); })

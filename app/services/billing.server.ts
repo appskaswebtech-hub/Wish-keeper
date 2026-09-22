@@ -60,6 +60,7 @@ const ACTIVE_SUBSCRIPTION_QUERY = `
         id
         name
         status
+        createdAt
         currentPeriodEnd
         trialDays
         lineItems {
@@ -91,6 +92,20 @@ export async function getActiveSubscription(admin: AdminApiContext) {
     const data = await response.json();
     const subs = data?.data?.currentAppInstallation?.activeSubscriptions ?? [];
     return subs[0] ?? null;
+}
+
+// Days left until this subscription's free trial converts to a paid charge.
+// Returns null when the shop isn't currently in a trial (no trialDays, or
+// the trial window has already passed).
+export function getTrialDaysRemaining(
+    subscription: Awaited<ReturnType<typeof getActiveSubscription>>
+): number | null {
+    if (!subscription || !subscription.trialDays || !subscription.createdAt) return null;
+    const createdAt = new Date(subscription.createdAt).getTime();
+    const trialEndsAt = createdAt + subscription.trialDays * 24 * 60 * 60 * 1000;
+    const msLeft = trialEndsAt - Date.now();
+    if (msLeft <= 0) return null;
+    return Math.ceil(msLeft / (24 * 60 * 60 * 1000));
 }
 
 export function getActivePlanKey(

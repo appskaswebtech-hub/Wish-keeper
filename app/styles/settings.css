@@ -586,3 +586,51 @@
     overflow: hidden;
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
 }
+
+
+@media (max-width: 600px){
+.Polaris-Page .st-card__body {
+    padding: 16px 10px;
+}
+.Polaris-Page .st-toggle-row {
+    padding: 11px 6px;
+    gap: 5px;
+}
+.Polaris-Page .st-card__head {
+    padding: 20px 15px 16px;
+}
+.Polaris-Page .st-icon-picker {   
+    flex-wrap: wrap;
+        gap: 8px;
+}
+.Polaris-Page .st-toggle__thumb {
+    top: 2px;
+    left: 2px;
+}
+.st-toggle input:checked~.st-toggle__thumb {
+    top: 2px;
+    left: -1px;
+}
+.Polaris-Page .st-toggle {
+    width: 33px;
+    height: 20px;
+}
+.Polaris-Page .st-toggle-row__label {
+    font-size: 12px;
+}
+.Polaris-Page .st-header {
+    padding: 20px 20px;
+}
+.Polaris-Page .st-toggle-row__hint {
+    font-size: 10px;
+}
+.Polaris-Page .st-field label {
+    font-size: 11px !important;
+}
+.Polaris-Page .st-grid {
+    grid-template-columns: 1fr;
+}
+.Polaris-Page .st-save-btn {
+    font-size: 12px;
+}
+}

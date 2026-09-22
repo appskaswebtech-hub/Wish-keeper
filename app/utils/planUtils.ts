@@ -22,23 +22,40 @@ export async function updateShopPlan(
     subscriptionId: string | null
 ) {
     const now = new Date();
+    const status = plan === "none" ? "inactive" : "active";
 
     return db.shopPlan.upsert({
         where: { shop },
         update: {
             plan,
             subscriptionId,
-            status: "active",
+            status,
             billingStartedAt: subscriptionId ? now : null,
         },
         create: {
             shop,
             plan,
             subscriptionId,
-            status: "active",
+            status,
             billingStartedAt: subscriptionId ? now : null,
         },
     });
+}
+
+// Keeps the local ShopPlan row (used by the storefront proxy API) in sync
+// with Shopify's live billing status (used to gate the admin UI). Without
+// this, the two can drift apart if the one-time write in the billing return
+// flow was ever missed or stale, silently disabling the storefront wishlist
+// button even though the admin correctly shows an active plan.
+export async function syncShopPlanFromSubscription(
+    shop: string,
+    subscription: { id: string; name?: string | null } | null
+) {
+    if (subscription) {
+        const planKey = subscription.name?.toLowerCase().includes("pro") ? "pro" : "basic";
+        return updateShopPlan(shop, planKey, subscription.id);
+    }
+    return updateShopPlan(shop, "none", null);
 }
 
 export async function cancelShopPlan(shop: string) {

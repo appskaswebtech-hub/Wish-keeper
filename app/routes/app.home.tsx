@@ -3,7 +3,8 @@ import type { KeyboardEvent } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
-import { getActiveSubscription } from "../services/billing.server";
+import { getActiveSubscription, getTrialDaysRemaining } from "../services/billing.server";
+import { syncShopPlanFromSubscription } from "../utils/planUtils";
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -20,6 +21,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const analytics = await getAnalytics(store.id);
   const subscription = await getActiveSubscription(admin);
   const hasActivePlan = !!subscription;
+  const trialDaysRemaining = getTrialDaysRemaining(subscription);
+  syncShopPlanFromSubscription(session.shop, subscription).catch((err) =>
+    console.error("[home admin] shop plan sync failed:", err)
+  );
   const settings = await getStoreSettings(store.id);
   const language = resolveLanguage(settings?.language, getSessionLocale(session));
 
@@ -111,6 +116,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     shop: session.shop,
     analytics,
     hasActivePlan,
+    trialDaysRemaining,
     language,
     productNameMap,
     recentActivity,
@@ -352,8 +358,48 @@ function BillingModal({ open, onNavigate, t, features }: { open: boolean; onNavi
   );
 }
 
+function TrialBanner({ daysRemaining, onUpgrade }: { daysRemaining: number; onUpgrade: () => void }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 16,
+        padding: "13px 20px",
+        background: "#fef9c3",
+        border: "1px solid rgba(202,138,4,0.25)",
+        borderRadius: 12,
+        fontSize: 13,
+        color: "#854d0e",
+      }}
+    >
+      <span>
+        <strong>{daysRemaining === 1 ? "1 day" : `${daysRemaining} days`}</strong> left in your free trial. Upgrade now to keep wishlists running without interruption.
+      </span>
+      <button
+        onClick={onUpgrade}
+        style={{
+          flexShrink: 0,
+          padding: "8px 16px",
+          background: "#b8922a",
+          color: "#fff",
+          border: "none",
+          borderRadius: 9,
+          fontSize: 12.5,
+          fontWeight: 600,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Upgrade plan
+      </button>
+    </div>
+  );
+}
+
 export default function Index() {
-  const { analytics, hasActivePlan, language, productNameMap, recentActivity, activityCustomerMap, weeklyComparison, topShoppers, shopperNameMap, health } = useLoaderData<typeof loader>();
+  const { analytics, hasActivePlan, trialDaysRemaining, language, productNameMap, recentActivity, activityCustomerMap, weeklyComparison, topShoppers, shopperNameMap, health } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(!hasActivePlan);
   const sparkData = analytics.dailyCounts.map((d: { count: number }) => d.count);
@@ -365,6 +411,9 @@ export default function Index() {
       <TitleBar title="Home" />
       <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} t={t} features={subscribeFeatures} />
       <div className="dash-root">
+        {trialDaysRemaining !== null && trialDaysRemaining <= 7 && (
+          <TrialBanner daysRemaining={trialDaysRemaining} onUpgrade={() => navigate("/app/billing")} />
+        )}
         <div className="dash-header">
           <div className="dash-header__left">
             <div className="dash-header__eyebrow">{t("dashboard.eyebrow")}</div>

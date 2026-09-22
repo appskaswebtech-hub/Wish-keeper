@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { useLoaderData, useNavigate, useFetcher } from "react-router";
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { getActiveSubscription } from "../services/billing.server";
+import { syncShopPlanFromSubscription } from "../utils/planUtils";
 import { authenticate } from "../shopify.server";
 import { findOrCreateStore, getAllWishlists, deleteWishlist } from "../services/wishlist.server";
 import wishlistStyles from "../styles/wishlist.css?url";
@@ -31,6 +32,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const data2 = await getAllWishlists(store.id, page, 20, sinceDate);
   const subscription = await getActiveSubscription(admin);
   const hasActivePlan = !!subscription;
+  syncShopPlanFromSubscription(session.shop, subscription).catch((err) =>
+    console.error("[wishlist admin] shop plan sync failed:", err)
+  );
 
   const customerIds = (data2.wishlists as any[])
     .filter((wl) => !wl.customerId.startsWith("guest_"))
@@ -366,7 +370,7 @@ function BulkDeleteBar({ selectedIds, onCleared }: { selectedIds: string[]; onCl
         <ConfirmDeleteModal
           label={`${selectedIds.length} selected wishlist${selectedIds.length !== 1 ? "s" : ""}`}
           isDeleting={isDeleting}
-          onCancel={() => setConfirmOpen(false)}
+          onCancel={() => setConfirmOpen(false)} 
           onConfirm={() => {
             fetcher.submit({ wishlistIds: JSON.stringify(selectedIds) }, { method: "POST" });
             setConfirmOpen(false);
@@ -404,6 +408,44 @@ export default function WishlistAdmin() {
     });
   };
 
+  const dragState = useRef({ isDown: false, startX: 0, startScrollLeft: 0, moved: false });
+
+  const onDragMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    dragState.current = { isDown: true, startX: e.pageX, startScrollLeft: el.scrollLeft, moved: false };
+    el.classList.add("wl-card--dragging");
+  };
+
+  const onDragMouseLeaveOrUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    dragState.current.isDown = false;
+    e.currentTarget.classList.remove("wl-card--dragging");
+  };
+
+  const onDragMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!dragState.current.isDown) return;
+    e.preventDefault();
+    const el = e.currentTarget;
+    const delta = e.pageX - dragState.current.startX;
+    if (Math.abs(delta) > 3) dragState.current.moved = true;
+    el.scrollLeft = dragState.current.startScrollLeft - delta;
+  };
+
+  const onDragClickCapture = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (dragState.current.moved) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragState.current.moved = false;
+    }
+  };
+
+  const dragScrollProps = {
+    onMouseDown: onDragMouseDown,
+    onMouseLeave: onDragMouseLeaveOrUp,
+    onMouseUp: onDragMouseLeaveOrUp,
+    onMouseMove: onDragMouseMove,
+    onClickCapture: onDragClickCapture,
+  };
+
   if (wishlists.length === 0 && page === 1) {
     return (
       <Page>
@@ -439,7 +481,7 @@ export default function WishlistAdmin() {
               </div>
             </div>
           </div>
-          <div className="wl-card">
+          <div className="wl-card" {...dragScrollProps}>
             <div className="wl-empty">
               <div className="wl-empty__icon"><IconHeart /></div>
               <p className="wl-empty__title">{range === "all" ? "No wishlists yet" : "No wishlists in this time range"}</p>
@@ -494,7 +536,7 @@ export default function WishlistAdmin() {
           <BulkDeleteBar selectedIds={[...selectedIds]} onCleared={() => setSelectedIds(new Set())} />
         )}
 
-        <div className="wl-card">
+        <div className="wl-card" {...dragScrollProps}>
           <table className="wl-table">
             <thead className="wl-table__head">
               <tr>

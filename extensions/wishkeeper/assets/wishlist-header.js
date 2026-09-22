@@ -360,6 +360,20 @@
         .catch(function () { });
     }
 
+    // Instant, no-network badge nudge: called right after an add/remove
+    // succeeds so the count reflects the change immediately instead of
+    // waiting on a second round-trip. refreshBadge() still runs afterward
+    // (via the callers) to reconcile with the server.
+    window.__wlBumpBadge = function (delta) {
+      var badge = document.getElementById("wl-hdr-badge");
+      if (!badge) return;
+      var current = parseInt(badge.textContent, 10);
+      if (isNaN(current)) current = 0;
+      var next = Math.max(0, current + delta);
+      badge.textContent = next > 99 ? "99+" : next;
+      badge.style.display = next > 0 ? "block" : "none";
+    };
+
     window.__wlRefreshBadge = refreshBadge;
     refreshBadge();
   }

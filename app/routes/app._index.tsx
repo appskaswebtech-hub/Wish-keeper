@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { getActiveSubscription } from "../services/billing.server";
+import { isWishlistIconEmbedEnabled } from "../services/theme.server";
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -20,8 +21,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const hasActivePlan = !!subscription;
   const settings = await getStoreSettings(store.id);
   const language = resolveLanguage(settings?.language, getSessionLocale(session));
+  const appEmbedEnabled = await isWishlistIconEmbedEnabled(admin);
 
-  return data({ shop: session.shop, hasActivePlan, language });
+  return data({ shop: session.shop, hasActivePlan, language, appEmbedEnabled });
 };
 
 function Sparkline({ color, data }: { color: string; data: number[] }) {
@@ -90,7 +92,7 @@ function BillingModal({ open, onNavigate, t, features }: { open: boolean; onNavi
 }
 
 export default function Analytics() {
-  const { hasActivePlan, language, shop } = useLoaderData<typeof loader>();
+  const { hasActivePlan, language, shop, appEmbedEnabled } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(!hasActivePlan);
   const t = getTranslator(language);
@@ -113,7 +115,7 @@ export default function Analytics() {
         </div>
         <div className="dash-setup-card">
           <div className="dash-setup-card__left">
-            <div className="dash-setup-card__icon dash-setup-card__icon--neutral">
+            <div className={`dash-setup-card__icon ${appEmbedEnabled ? "dash-setup-card__icon--on" : "dash-setup-card__icon--neutral"}`}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
             </div>
             <div>
@@ -121,14 +123,36 @@ export default function Analytics() {
               <p className="dash-setup-card__sub">Make sure the wishlist icon is enabled in your theme's App Embeds.</p>
             </div>
           </div>
-          <a
-            href={`https://${shop}/admin/themes/current/editor?context=apps`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="dash-setup-card__btn"
-          >
-            Open Theme Editor →
-          </a>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {appEmbedEnabled === true && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "6px 12px",
+                  background: "var(--green-bg)",
+                  color: "#16a34a",
+                  border: "1px solid rgba(22,163,74,0.2)",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                Enabled
+              </span>
+            )}
+            <a
+              href={`https://${shop}/admin/themes/current/editor?context=apps`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="dash-setup-card__btn"
+            >
+              Open Theme Editor →
+            </a>
+          </div>
         </div>
         <div className="dash-guide">
           <h2 className="dash-guide__title">Setting Up Your <em>Theme Editor</em></h2>

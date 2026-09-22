@@ -456,3 +456,63 @@
         transform: rotate(360deg);
     }
 }
+
+@media (max-width: 600px){
+.Polaris-Page .bl-plan-card__head {
+    padding: 16px 14px 16px;
+}
+.Polaris-Page .bl-plan-card__price {
+    font-size: 30px;
+}
+.Polaris-Page .bl-plan-card__period {
+    font-size: 12px;
+}
+.Polaris-Page .bl-plan-card__trial {
+    font-size: 10px;
+}
+.Polaris-Page .bl-plan-card__trial svg {
+    width: 16px;
+    height: 16px;
+}
+.Polaris-Page .bl-plan-card__body {
+    padding: 20px 14px;
+}
+
+.Polaris-Page .bl-plan-card__feature-check {
+    width: 16px;
+    height: 16px;
+}
+.Polaris-Page .bl-plan-card__feature {
+    font-size: 12px;
+}
+.Polaris-Page .bl-banner {
+    padding: 8px 22px;
+}
+.Polaris-Page .bl-banner__title {
+    font-size: 12px;
+}
+.Polaris-Page .bl-header {
+    padding: 12px 20px;
+}
+
+.Polaris-Page .bl-banner__sub {
+    font-size: 10px;
+}
+.Polaris-Page .bl-banner__sub svg {
+    width: 14px;
+    height: 13px;
+}
+.Polaris-Page .bl-btn:disabled {
+    gap: 3px;
+    font-size: 12px;    
+}
+.Polaris-Page .bl-btn {
+    gap: 5px;
+    padding: 9px 11px;
+    font-size: 10px;
+}
+.Polaris-Page .bl-banner__icon {
+    width: 34px;
+    height: 34px;
+}
+}

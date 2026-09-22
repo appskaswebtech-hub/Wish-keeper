@@ -316,7 +316,7 @@
           if (action === "add") wishlistedIds.add(productId);
           else wishlistedIds.delete(productId);
           syncButtons(productId, action === "add");
-          updateHeaderBadge();
+          updateHeaderBadge(action === "add" ? 1 : -1);
           var cardContainer = btn.closest('.product-card-wrapper, .card-wrapper, .grid-product, .product-item, .product-card, .card, .grid__item');
           var imgEl = cardContainer ? cardContainer.querySelector('img') : null;
           var titleEl = cardContainer ? cardContainer.querySelector('[class*="card__heading"] a, [class*="card__name"], [class*="product-title"], h3, h2, .card__heading') : null;
@@ -342,7 +342,10 @@
     }
   }
 
-  function updateHeaderBadge() {
+  function updateHeaderBadge(delta) {
+    if (typeof delta === "number" && window.__wlBumpBadge) {
+      window.__wlBumpBadge(delta);
+    }
     if (window.__wlRefreshBadge) {
       window.__wlRefreshBadge();
       return;

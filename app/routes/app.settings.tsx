@@ -8,7 +8,7 @@ import {
 } from "react-router";
 import { Page } from "@shopify/polaris";
 import { getActiveSubscription } from "../services/billing.server";
-import { TitleBar } from "@shopify/app-bridge-react";
+import { TitleBar, SaveBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import {
   findOrCreateStore,
@@ -219,16 +219,25 @@ export default function Settings() {
 
   const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  const savedFormRef = useRef(form);
+  const isDirty = JSON.stringify(form) !== JSON.stringify(savedFormRef.current);
+
   const [showSavedToast, setShowSavedToast] = useState(false);
   const savedToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data?.success === true) {
+      savedFormRef.current = form;
       setShowSavedToast(true);
       if (savedToastTimer.current) clearTimeout(savedToastTimer.current);
       savedToastTimer.current = setTimeout(() => setShowSavedToast(false), 2600);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.state, fetcher.data]);
+
+  function handleDiscard() {
+    setForm(savedFormRef.current);
+  }
 
   function handleSave() {
     const formData = new FormData();
@@ -239,6 +248,12 @@ export default function Settings() {
   return (
     <Page>
       <TitleBar title={t("settings.titleBar")} />
+        <SaveBar id="settings-save-bar" open={isDirty}>
+          <button variant="primary" onClick={handleSave} {...(isSaving ? { loading: "" } : {})}>
+            {t("settings.saveBar.save")}
+          </button>
+          <button onClick={handleDiscard}>{t("settings.saveBar.discard")}</button>
+        </SaveBar>
         <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} t={t} features={subscribeFeatures} />
         {showSavedToast && (
           <div className="st-saved-toast">
@@ -287,6 +302,21 @@ export default function Settings() {
                 </div>
                 <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>{t("settings.pageDisplay.wishlistOpensAsHint")}</div>
               </div>
+              {form.wishlistDisplayMode === "page" && (
+                <>
+                  <div className="st-divider" />
+                  <div className="st-field">
+                    <label className="st-field__label">{t("settings.pageDisplay.gridColumns")}</label>
+                    <div className="st-field__select-wrap">
+                      <select className="st-field__select" value={form.gridColumns} onChange={(e) => set("gridColumns", e.target.value)}>
+                        {[2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                          <option key={n} value={String(n)}>{t("settings.pageDisplay.columnsOption", { n })}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

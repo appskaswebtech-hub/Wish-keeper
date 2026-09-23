@@ -144,8 +144,13 @@
 
   var wlIconSettings = { notAddedIcon: "heart-outline", addedIcon: "heart-filled", customIconSvg: "", customIconColor: "" };
 
+  function getBtnBackground(isActive) {
+    return isActive ? (wlIconSettings.customIconColor || ACTIVE_COLOR) : "rgba(255,255,255,0.92)";
+  }
+
   function getIconSvg(key, isActive, size) {
-    var color = wlIconSettings.customIconColor || ACTIVE_COLOR;
+    var themeColor = wlIconSettings.customIconColor || ACTIVE_COLOR;
+    var color = isActive ? "#ffffff" : themeColor;
     if (wlIconSettings.customIconSvg && wlIconSettings.customIconSvg.trim()) {
       var div = document.createElement("div");
       div.innerHTML = wlIconSettings.customIconSvg.trim();
@@ -253,7 +258,7 @@
     btn.type = "button";
     btn.setAttribute("aria-label", isActive ? TEXT_REMOVE : TEXT_ADD);
     btn.setAttribute("data-wl-product", productId);
-    btn.style.cssText = "width:" + ICON_SIZE + "px;height:" + ICON_SIZE + "px;border:none;background:rgba(255,255,255,0.92);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.08);padding:0;position:relative;z-index:99999;isolation:isolate;";
+    btn.style.cssText = "width:" + ICON_SIZE + "px;height:" + ICON_SIZE + "px;border:none;background:" + getBtnBackground(isActive) + ";border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;box-shadow:0 1px 4px rgba(0,0,0,0.08);padding:0;position:relative;z-index:99999;isolation:isolate;";
 
     var svgSize = Math.round(ICON_SIZE * 0.5);
     var iconKey = isActive ? wlIconSettings.addedIcon : wlIconSettings.notAddedIcon;
@@ -337,6 +342,7 @@
     var svgSize = Math.round(ICON_SIZE * 0.5);
     for (var i = 0; i < btns.length; i++) {
       btns[i].classList.toggle("active", isActive);
+      btns[i].style.background = getBtnBackground(isActive);
       var iconKey = isActive ? wlIconSettings.addedIcon : wlIconSettings.notAddedIcon;
       btns[i].innerHTML = getIconSvg(iconKey, isActive, svgSize);
     }

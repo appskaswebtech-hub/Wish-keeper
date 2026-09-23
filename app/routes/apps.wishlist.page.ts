@@ -145,6 +145,7 @@
     var merchantLanguage = window.__wlPageConfig && window.__wlPageConfig.language;
     var detectedLocale = (window.__wlPageConfig && window.__wlPageConfig.locale) || 'en';
     var locale = ((merchantLanguage || detectedLocale) + '').split('-')[0].toLowerCase();
+    var isEmbedView = !!(window.__wlPageConfig && window.__wlPageConfig.isEmbed);
 
     var translations = {
       de: {
@@ -282,7 +283,7 @@
         var items = data.items || [];
         var s = data.settings || {};
 
-        if (s.gridColumns) document.documentElement.style.setProperty("--wl-columns", s.gridColumns);
+        if (s.gridColumns && !isEmbedView) document.documentElement.style.setProperty("--wl-columns", s.gridColumns);
         var wlPrimaryColor = s.customIconColor || s.activeColor;
         if (wlPrimaryColor) document.documentElement.style.setProperty("--wl-primary", wlPrimaryColor);
         if (s.customCss && !document.getElementById("wl-custom-css")) {

@@ -245,7 +245,7 @@ const en: Dict = {
       title: "Custom Wishlist Button",
       desc: "Already have your own \"Add to Wishlist\" button in your theme? Paste its HTML and we'll wire it up automatically — no code editing needed.",
       htmlLabel: "Button HTML",
-      tip: "Tip: copy it from your theme code, or right-click the button on your storefront and choose \"Inspect\" → copy the element's HTML.",
+      tip: "Tip: on your storefront, right-click your existing wishlist button, choose \"Inspect\", then copy and paste that element's HTML here.",
     },
     emailAlerts: {
       title: "Email Alerts",
@@ -265,6 +265,7 @@ const en: Dict = {
       savedHint: "Changes are saved immediately",
       saved: "Saved!",
       save: "Save Settings",
+      discard: "Discard",
     },
     language: {
       title: "Language",
@@ -653,7 +654,7 @@ const de: Dict = {
       title: "Eigener Wunschlisten-Button",
       desc: "Haben Sie bereits einen eigenen \"Zur Wunschliste hinzufügen\"-Button in Ihrem Theme? Fügen Sie dessen HTML ein, wir verbinden ihn automatisch — keine Code-Bearbeitung nötig.",
       htmlLabel: "Button-HTML",
-      tip: "Tipp: Kopieren Sie es aus Ihrem Theme-Code, oder klicken Sie im Storefront mit der rechten Maustaste auf den Button und wählen Sie \"Untersuchen\" → HTML des Elements kopieren.",
+      tip: "Tipp: Klicken Sie im Shop mit der rechten Maustaste auf Ihren vorhandenen Wunschlisten-Button, wählen Sie \"Untersuchen\" und fügen Sie das HTML des Elements hier ein.",
     },
     emailAlerts: {
       title: "E-Mail-Benachrichtigungen",
@@ -673,6 +674,7 @@ const de: Dict = {
       savedHint: "Änderungen werden sofort gespeichert",
       saved: "Gespeichert!",
       save: "Einstellungen speichern",
+      discard: "Verwerfen",
     },
     language: {
       title: "Sprache",
@@ -1061,7 +1063,7 @@ const es: Dict = {
       title: "Botón de lista de deseos personalizado",
       desc: "¿Ya tienes tu propio botón \"Añadir a la lista de deseos\" en tu tema? Pega su HTML y lo conectaremos automáticamente — sin editar código.",
       htmlLabel: "HTML del botón",
-      tip: "Consejo: cópialo desde el código de tu tema, o haz clic derecho en el botón de tu tienda y elige \"Inspeccionar\" → copiar el HTML del elemento.",
+      tip: "Consejo: en tu tienda, haz clic derecho en tu botón de lista de deseos existente, elige \"Inspeccionar\" y pega aquí el HTML de ese elemento.",
     },
     emailAlerts: {
       title: "Alertas por correo",
@@ -1081,6 +1083,7 @@ const es: Dict = {
       savedHint: "Los cambios se guardan inmediatamente",
       saved: "¡Guardado!",
       save: "Guardar configuración",
+      discard: "Descartar",
     },
     language: {
       title: "Idioma",
@@ -1469,7 +1472,7 @@ const fr: Dict = {
       title: "Bouton de liste de souhaits personnalisé",
       desc: "Vous avez déjà votre propre bouton \"Ajouter à la liste de souhaits\" dans votre thème ? Collez son HTML et nous le connecterons automatiquement — aucune modification de code nécessaire.",
       htmlLabel: "HTML du bouton",
-      tip: "Astuce : copiez-le depuis le code de votre thème, ou faites un clic droit sur le bouton de votre boutique et choisissez \"Inspecter\" → copier le HTML de l'élément.",
+      tip: "Astuce : sur votre boutique, faites un clic droit sur votre bouton de liste de souhaits existant, choisissez \"Inspecter\", puis copiez-collez le HTML de cet élément ici.",
     },
     emailAlerts: {
       title: "Alertes par e-mail",
@@ -1489,6 +1492,7 @@ const fr: Dict = {
       savedHint: "Les modifications sont enregistrées immédiatement",
       saved: "Enregistré !",
       save: "Enregistrer les paramètres",
+      discard: "Ignorer",
     },
     language: {
       title: "Langue",
@@ -1877,7 +1881,7 @@ const it: Dict = {
       title: "Pulsante lista desideri personalizzato",
       desc: "Hai già un tuo pulsante \"Aggiungi alla lista desideri\" nel tema? Incolla il suo HTML e lo collegheremo automaticamente — nessuna modifica al codice necessaria.",
       htmlLabel: "HTML del pulsante",
-      tip: "Suggerimento: copialo dal codice del tuo tema, oppure fai clic destro sul pulsante nel tuo negozio e scegli \"Ispeziona\" → copia l'HTML dell'elemento.",
+      tip: "Suggerimento: nel tuo negozio, fai clic destro sul pulsante wishlist esistente, scegli \"Ispeziona\" e incolla qui l'HTML di quell'elemento.",
     },
     emailAlerts: {
       title: "Avvisi email",
@@ -1897,6 +1901,7 @@ const it: Dict = {
       savedHint: "Le modifiche vengono salvate immediatamente",
       saved: "Salvato!",
       save: "Salva impostazioni",
+      discard: "Ignora",
     },
     language: {
       title: "Lingua",

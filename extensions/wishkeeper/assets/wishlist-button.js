@@ -225,17 +225,88 @@
     }
 
     var initialCheckDone = false;
+    var checkSeq = 0;
 
     function refreshActiveState(silent) {
       if (!silent) btn.classList.add("loading");
-      return fetch(proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&customerId=" + encodeURIComponent(customerId) + "&productId=" + encodeURIComponent(productId) + "&action=check")
+      var seq = ++checkSeq;
+      var url = proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&customerId=" + encodeURIComponent(customerId) + "&productId=" + encodeURIComponent(productId) + "&action=check";
+      if (variantId) url += "&variantId=" + encodeURIComponent(variantId);
+      return fetch(url)
         .then(function (r) { return r.json(); })
-        .then(function (data) { setActive(!!data.inWishlist); })
+        .then(function (data) { if (seq === checkSeq) setActive(!!data.inWishlist); })
         .catch(function () { })
         .finally(function () { initialCheckDone = true; if (!silent) btn.classList.remove("loading"); });
     }
 
     refreshActiveState();
+
+    function handleVariantChange(newVariantId) {
+      newVariantId = newVariantId ? String(newVariantId) : null;
+      if (!newVariantId || newVariantId === variantId) return;
+      variantId = newVariantId;
+      wrapper.dataset.variantId = variantId;
+      initialCheckDone = false;
+      refreshActiveState();
+    }
+
+    function readVariantFromUrl() {
+      try {
+        return new URLSearchParams(window.location.search).get("variant");
+      } catch (e) {
+        return null;
+      }
+    }
+
+    document.addEventListener("change", function (e) {
+      var t = e.target;
+      if (t && t.name === "id" && t.value && t.closest('form[action*="/cart/add"]')) {
+        handleVariantChange(t.value);
+      }
+    });
+
+    document.addEventListener("variant:change", function (e) {
+      var v = e.detail && e.detail.variant;
+      if (v && v.id) handleVariantChange(v.id);
+    });
+
+    if (!window.__wlHistoryPatched) {
+      window.__wlHistoryPatched = true;
+      ["pushState", "replaceState"].forEach(function (method) {
+        var original = history[method];
+        history[method] = function () {
+          var ret = original.apply(this, arguments);
+          window.dispatchEvent(new Event("wl:urlchange"));
+          return ret;
+        };
+      });
+    }
+
+    window.addEventListener("wl:urlchange", function () {
+      var v = readVariantFromUrl();
+      if (v) handleVariantChange(v);
+    });
+
+    // Fallback for themes that swap the variant without firing any event at
+    // all (custom/legacy variant pickers): poll the hidden cart-form field
+    // directly so the button still catches up.
+    function isPlausibleVariantId(v) {
+      return !!v && /^\d{5,}$/.test(String(v));
+    }
+
+    function pollVariantFromDom() {
+      var field = document.querySelector('form[action*="/cart/add"] [name="id"]');
+      if (field && isPlausibleVariantId(field.value)) {
+        handleVariantChange(field.value);
+        return;
+      }
+      var urlVariant = readVariantFromUrl();
+      if (isPlausibleVariantId(urlVariant)) handleVariantChange(urlVariant);
+    }
+
+    setInterval(function () {
+      if (document.visibilityState === "visible") pollVariantFromDom();
+    }, 400);
 
     window.addEventListener("pageshow", function () {
       refreshActiveState(true);
@@ -251,6 +322,7 @@
 
     btn.addEventListener("click", function () {
       if (!initialCheckDone) return;
+      checkSeq++;
       btn.classList.add("loading");
       var action = isActive ? "remove" : "add";
       setActive(!isActive);

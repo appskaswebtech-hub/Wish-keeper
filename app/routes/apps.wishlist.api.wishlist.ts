@@ -24,6 +24,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shop = url.searchParams.get("shop");
   const customerId = url.searchParams.get("customerId");
   const productId = url.searchParams.get("productId");
+  const variantId = url.searchParams.get("variantId");
   const action = url.searchParams.get("action");
 
   if (!shop) {
@@ -47,7 +48,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   if (action === "check" && productId) {
-    const inWishlist = await isInWishlist(store.id, customerId, productId);
+    const inWishlist = await isInWishlist(store.id, customerId, productId, variantId);
     return data({ inWishlist }, { headers: cors });
   }
 

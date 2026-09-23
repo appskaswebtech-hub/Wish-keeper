@@ -35,8 +35,6 @@
     .wl-deco-line--right{background:linear-gradient(90deg,#b8922a,transparent)}
     .wl-deco-heart{width:14px;height:14px;color:var(--wl-primary,#b8922a)}
     .wl-count{font-size:12.5px;color:#a39a8e;margin-top:2px;letter-spacing:0.03em}
-    .wl-share-btn{position:absolute!important;right:0!important;top:6px!important;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid rgba(184,146,42,0.28);border-radius:100px;background:#fff;cursor:pointer;font-size:12.5px;font-weight:500;color:#4a4238;transition:border-color 0.2s,color 0.2s}
-    .wl-share-btn:hover{border-color:#b8922a;color:#b8922a}
     .wl-actionbar{display:none;align-items:center;justify-content:center;gap:12px;padding:14px 0 22px;margin-bottom:20px;border-bottom:1px solid rgba(0,0,0,0.06);flex-wrap:wrap}
     .wl-actionbar-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(184,146,42,0.28);background:#fff;cursor:pointer;font-size:12.5px;font-weight:600;color:#4a4238;padding:8px 16px;border-radius:100px;transition:border-color 0.2s,color 0.2s,background 0.2s}
     .wl-actionbar-btn:hover{border-color:#b8922a;color:#b8922a;background:#f9f1e1;text-decoration:none}
@@ -71,6 +69,7 @@
     .wl-card-title{font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.35;color:#1a1612}
     .wl-card-title a{color:inherit;text-decoration:none}
     .wl-card-title a:hover{color:#b8922a}
+    .wl-card-variant{font-size:12px;color:#8a8074;margin-bottom:6px}
     .wl-card-price{font-size:15px;font-weight:700;color:var(--wl-primary,#b8922a);margin-bottom:14px}
     .wl-card-atc{width:100%;padding:11px;background:var(--wl-primary,#b8922a);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:0.8px;cursor:pointer;transition:opacity 0.2s,transform 0.15s}
     .wl-card-atc:hover:not(:disabled){opacity:0.88}
@@ -111,14 +110,6 @@
         </div>
         <span class="wl-count" id="wl-count"></span>
       </div>
-      <button type="button" class="wl-share-btn" id="wl-share" style="display:none" onclick="window.__wlShare()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-          <polyline points="16 6 12 2 8 6"/>
-          <line x1="12" y1="2" x2="12" y2="15"/>
-        </svg>
-        <span id="wl-share-label">Share</span>
-      </button>
     </div>
     <div class="wl-actionbar" id="wl-actionbar">
       <button type="button" class="wl-actionbar-btn wl-actionbar-btn--danger" id="wl-clear-btn" onclick="window.__wlClearWishlist()">
@@ -142,7 +133,8 @@
       proxyUrl: "/apps/wishlist",
       customerId: ${JSON.stringify(loggedInCustomerId)} || localStorage.getItem("wishlist_guest_id"),
       locale: "en",
-      language: ${JSON.stringify(language)}
+      language: ${JSON.stringify(language)},
+      isEmbed: ${JSON.stringify(isEmbed)}
     };
   </script>
   <script>
@@ -240,8 +232,6 @@
 
     var titleEl = document.getElementById("wl-title");
     if (titleEl) titleEl.textContent = T.title;
-    var shareLabelEl = document.getElementById("wl-share-label");
-    if (shareLabelEl) shareLabelEl.textContent = T.share;
     var loaderTextEl = document.getElementById("wl-loader-text");
     if (loaderTextEl) loaderTextEl.textContent = T.loaderText;
     var loadMoreBtnEl = document.getElementById("wl-load-more-btn");
@@ -285,7 +275,8 @@
       }, 3000);
     }
 
-    fetch(proxyUrl + "/api/products?shop=" + encodeURIComponent(shop) + "&customerId=" + encodeURIComponent(customerId))
+    function loadWishlist(isResync) {
+      return fetch(proxyUrl + "/api/products?shop=" + encodeURIComponent(shop) + "&customerId=" + encodeURIComponent(customerId))
       .then(function (r) { return r.json(); })
       .then(function (data) {
         var items = data.items || [];
@@ -301,12 +292,16 @@
           document.head.appendChild(style);
         }
 
-        if (s.showShareButton) document.getElementById("wl-share").style.display = "inline-flex";
-
         if (s.showItemCount !== false) {
           document.getElementById("wl-count").textContent = T.items(items.length);
         } else {
           document.getElementById("wl-count").style.display = "none";
+        }
+
+        if (isResync) {
+          shownCount = 0;
+          var grid = document.getElementById("wl-grid");
+          if (grid) grid.innerHTML = "";
         }
 
         if (items.length === 0) { showEmpty(); return; }
@@ -319,10 +314,52 @@
         appendItems(itemsPerPage);
       })
       .catch(function () {
+        if (isResync) return;
         hideLoader();
         document.getElementById("wl-grid").innerHTML =
           '<div class="wl-empty"><p>' + T.couldNotLoad + '</p></div>';
       });
+    }
+
+    loadWishlist(false);
+
+    // Lightweight safety net after a cart-add-triggered removal: only takes
+    // away cards that truly aren't in the wishlist anymore, and never
+    // touches any card that's still there, so unrelated items never flicker.
+    function reconcileWishlist() {
+      fetch(proxyUrl + "/api/products?shop=" + encodeURIComponent(shop) + "&customerId=" + encodeURIComponent(customerId))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          console.log('[wl-debug] reconcile response', { error: data.error, itemCount: (data.items || []).length, allItemsBefore: allItems.length });
+          if (data.error) return;
+          var freshItems = data.items || [];
+
+          // Safety guard: if this came back empty while we still expect at
+          // least one item to remain, treat it as a suspicious/transient
+          // response and leave the DOM untouched rather than risk wiping
+          // out items that are actually still there.
+          if (freshItems.length === 0 && allItems.length > 0) return;
+
+          var freshKeys = {};
+          freshItems.forEach(function (i) { freshKeys[i.productId + '::' + (i.variantId || '')] = true; });
+
+          var cards = document.querySelectorAll('#wl-grid [data-product-id]');
+          cards.forEach(function (card) {
+            var cpid = card.getAttribute('data-product-id');
+            var cvid = card.getAttribute('data-variant-id') || '';
+            if (!freshKeys[cpid + '::' + cvid]) card.remove();
+          });
+
+          allItems = allItems.filter(function (i) { return freshKeys[i.productId + '::' + (i.variantId || '')]; });
+          shownCount = Math.min(shownCount, allItems.length);
+
+          var rem = allItems.length;
+          var countEl = document.getElementById("wl-count");
+          if (countEl) countEl.textContent = T.items(rem);
+          if (rem === 0) { showEmpty(); } else { updateLoadMore(); }
+        })
+        .catch(function () {});
+    }
 
     function appendItems(count) {
       var s = storeSettings;
@@ -336,7 +373,7 @@
         var p = item.product;
         if (!p) return;
 
-        html += '<div class="wl-card" data-product-id="' + item.productId + '">';
+        html += '<div class="wl-card" data-product-id="' + item.productId + '" data-variant-id="' + (item.variantId || '') + '">';
         html += '<div class="wl-card-img-wrap">';
 
         if (p.image) {
@@ -359,6 +396,7 @@
 
         if (s.showVendor && p.vendor) html += '<div class="wl-card-vendor">' + esc(p.vendor) + '</div>';
         if (s.showTitle !== false) html += '<div class="wl-card-title"><a href="/products/' + p.handle + '">' + esc(p.title) + '</a></div>';
+        if (p.variantTitle) html += '<div class="wl-card-variant">' + esc(p.variantTitle) + '</div>';
         if (s.showPrice !== false) html += '<div class="wl-card-price">' + money(p.price, p.currency) + '</div>';
 
         if (s.showAddToCart !== false) {
@@ -426,22 +464,28 @@
     }
 
     window.__wlRemove = function (pid, vid, fromCart) {
-      var card = document.querySelector('[data-product-id="' + pid + '"]');
+      var vidKey = vid || "";
+      var isMatch = function (i) { return i.productId === pid && (i.variantId || "") === vidKey; };
+      var card = document.querySelector('#wl-grid [data-product-id="' + pid + '"][data-variant-id="' + vidKey + '"]')
+        || document.querySelector('#wl-grid [data-product-id="' + pid + '"]');
       var imgEl = card ? card.querySelector("img") : null;
       var titleEl = card ? card.querySelector(".wl-card-title a") : null;
       var imgSrc = imgEl ? imgEl.src : null;
       var title = titleEl ? titleEl.textContent : "Product";
 
       if (card) card.classList.add("removing");
+      console.log("[wl-debug] __wlRemove called", { pid: pid, vid: vid, fromCart: fromCart, cardFound: !!card });
 
       fetch(proxyUrl + "/api/wishlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shop: shop, customerId: customerId, productId: pid, variantId: vid || null, action: "remove" })
-      }).then(function () {
+      }).then(function (res) {
+        console.log("[wl-debug] remove fetch resolved", res.status);
         setTimeout(function () {
-          var wasVisible = allItems.slice(0, shownCount).some(function (i) { return i.productId === pid; });
-          allItems = allItems.filter(function (i) { return i.productId !== pid; });
+          console.log("[wl-debug] removing card from DOM now", { cardStillFound: !!card, cardInDocument: card ? document.contains(card) : false });
+          var wasVisible = allItems.slice(0, shownCount).some(isMatch);
+          allItems = allItems.filter(function (i) { return !isMatch(i); });
           if (wasVisible && shownCount > 0) shownCount--;
           var rem = allItems.length;
           document.getElementById("wl-count").textContent = T.items(rem);
@@ -469,6 +513,8 @@
               }
             });
         }
+      }).catch(function (err) {
+        console.error("[wl-debug] remove fetch FAILED", err);
       });
     };
 
@@ -537,11 +583,6 @@
       }
 
       function openCartDrawer() {
-        var cartPageLink = document.querySelector(
-          'header a[href="/cart"], #shopify-section-header a[href="/cart"], .header a[href="/cart"], a#cart-icon-bubble'
-        );
-        if (cartPageLink) return;
-
         var hasDrawer = !!(
           document.querySelector('cart-drawer') ||
           document.querySelector('[id="cart-drawer"]') ||
@@ -593,11 +634,97 @@
       }
 
       function addToCart(variantId) {
-        var card = document.querySelector('[data-product-id="' + pid + '"]');
+        var card = document.querySelector('#wl-grid [data-product-id="' + pid + '"][data-variant-id="' + (vid || "") + '"]')
+          || document.querySelector('#wl-grid [data-product-id="' + pid + '"]');
         var imgEl = card ? card.querySelector("img") : null;
         var titleEl = card ? card.querySelector(".wl-card-title a") : null;
         var imgSrc = imgEl ? imgEl.src : null;
         var title = titleEl ? titleEl.textContent : "Product";
+
+        // Best-effort refresh of the theme's own cart-drawer markup via Shopify's
+        // Section Rendering API. Fully decoupled from the actual add-to-cart call
+        // below: if a theme doesn't have these section ids, this silently no-ops
+        // and never affects the (already working) cart mutation itself.
+        function refreshCartSections() {
+          if (window.Alpine) return; // Alpine-based themes manage their own DOM; see refreshCartUniversal.
+          try {
+            fetch('/cart?sections=cart-drawer,cart-icon-bubble,cart-notification,cart-live-region-text')
+              .then(function (r) { console.log('[wl-debug] sections fetch status', r.status); return r.ok ? r.json() : null; })
+              .then(function (sections) {
+                console.log('[wl-debug] sections keys found', sections ? Object.keys(sections) : null);
+                if (!sections) return;
+                var targets = [
+                  { key: 'cart-drawer', selector: '#CartDrawer' },
+                  { key: 'cart-icon-bubble', selector: '#cart-icon-bubble' },
+                  { key: 'cart-notification', selector: '#cart-notification' },
+                  { key: 'cart-live-region-text', selector: '#cart-live-region-text' },
+                ];
+                targets.forEach(function (t) {
+                  var html = sections[t.key];
+                  if (!html) { console.log('[wl-debug] no html for section', t.key); return; }
+                  try {
+                    var doc = new DOMParser().parseFromString(html, 'text/html');
+                    var freshEl = doc.querySelector(t.selector);
+                    var targetEl = document.querySelector(t.selector);
+                    console.log('[wl-debug]', t.key, 'freshEl found:', !!freshEl, 'targetEl found on page:', !!targetEl);
+                    if (freshEl && targetEl) targetEl.innerHTML = freshEl.innerHTML;
+                  } catch (e) { console.error('[wl-debug] error applying section', t.key, e); }
+                });
+              })
+              .catch(function (e) { console.error('[wl-debug] sections fetch failed', e); });
+          } catch (e) { console.error('[wl-debug] refreshCartSections threw', e); }
+        }
+
+        // Universal fallback for themes without the Dawn-style section ids
+        // (custom themes, Alpine.js-driven cart drawers like Horizon, etc.):
+        // re-fetch the ACTUAL current page HTML (which reflects the true,
+        // just-updated cart state server-side) and swap in whichever known
+        // cart-drawer containers exist on both the live page and the fresh
+        // HTML. Fully best-effort and decoupled from the cart mutation itself.
+        function refreshCartUniversal() {
+          try {
+            var candidates = [
+              'cart-drawer', '#cart-drawer', '#CartDrawer', '#ajax-cart',
+              '.cart-drawer__inner', '[data-cart-drawer]', '#cart-icon-bubble',
+              '.cart-bubble__text-count'
+            ];
+            if (window.Alpine) {
+              // Alpine-based themes (e.g. Horizon) own and reactively render
+              // their cart drawer's DOM themselves. Overwriting it with raw
+              // HTML here fights Alpine's own templating and corrupts the
+              // layout, so on these themes we only ask Alpine's own store to
+              // refresh itself, and never touch the DOM directly.
+              ['cart', 'miniCart', 'cartDrawer'].forEach(function (name) {
+                try {
+                  var s = Alpine.store(name);
+                  if (!s) return;
+                  ['refresh', 'fetchCart', 'getCart', 'update', 'init'].forEach(function (fn) {
+                    if (typeof s[fn] === 'function') {
+                      try { s[fn](); } catch (e) {}
+                    }
+                  });
+                } catch (e) {}
+              });
+              return;
+            }
+
+            fetch(window.location.pathname + window.location.search, { credentials: 'same-origin' })
+              .then(function (r) { return r.ok ? r.text() : null; })
+              .then(function (html) {
+                if (!html) return;
+                var doc = new DOMParser().parseFromString(html, 'text/html');
+                candidates.forEach(function (sel) {
+                  var freshEl = doc.querySelector(sel);
+                  var targetEl = document.querySelector(sel);
+                  if (freshEl && targetEl) {
+                    console.log('[wl-debug] universal refresh applied for', sel);
+                    targetEl.innerHTML = freshEl.innerHTML;
+                  }
+                });
+              })
+              .catch(function (e) { console.error('[wl-debug] universal refresh fetch failed', e); });
+          } catch (e) { console.error('[wl-debug] refreshCartUniversal threw', e); }
+        }
 
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/cart/add.js', true);
@@ -606,9 +733,12 @@
           if (xhr.readyState !== 4) return;
           if (xhr.status >= 200 && xhr.status < 300) {
             syncCartBubble();
+            refreshCartSections();
+            refreshCartUniversal();
             openCartDrawer();
             showToast(title, T.addedToCart, imgSrc);
             window.__wlRemove(pid, vid, true);
+            setTimeout(reconcileWishlist, 700);
             btnEl.textContent = T.added;
             btnEl.classList.add('added');
           } else {
@@ -627,11 +757,6 @@
       }
 
       getVariantId(addToCart);
-    };
-
-    window.__wlShare = function () {
-      if (navigator.share) navigator.share({ title: T.title, url: location.href });
-      else if (navigator.clipboard) { navigator.clipboard.writeText(location.href); }
     };
 
     function showClearConfirm(onConfirm) {

@@ -57,7 +57,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     showItemCount: formData.get("showItemCount") === "true",
     headerIconEnabled: formData.get("headerIconEnabled") === "true",
     wishlistDisplayMode: (formData.get("wishlistDisplayMode") as string) || "page",
-    gridColumns: parseInt(formData.get("gridColumns") as string) || 4,
+    gridColumns: parseInt(formData.get("gridColumns") as string) || 5,
     maxItemsPerList: parseInt(formData.get("maxItemsPerList") as string) || 50,
     iconStyle,
     activeColor: (formData.get("activeColor") as string) || "#e74c6f",
@@ -172,7 +172,6 @@ export default function Settings() {
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const isSaving = fetcher.state === "submitting";
-  const saved = fetcher.state === "idle" && fetcher.data?.success === true;
   const [modalOpen, setModalOpen] = useState(!hasActivePlan);
   const [cssModalOpen, setCssModalOpen] = useState(false);
   const [emailProvider, setEmailProvider] = useState<"default" | "gmail" | "custom">(
@@ -199,7 +198,7 @@ export default function Settings() {
     showItemCount: settings?.showItemCount ?? true,
     headerIconEnabled: settings?.headerIconEnabled ?? true,
     wishlistDisplayMode: settings?.wishlistDisplayMode ?? "page",
-    gridColumns: String(settings?.gridColumns ?? 4),
+    gridColumns: String(settings?.gridColumns ?? 5),
     maxItemsPerList: String(settings?.maxItemsPerList ?? 50),
     iconStyle: settings?.iconStyle ?? "heart",
     activeColor: settings?.activeColor ?? "#e74c6f",
@@ -220,6 +219,17 @@ export default function Settings() {
 
   const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  const [showSavedToast, setShowSavedToast] = useState(false);
+  const savedToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data?.success === true) {
+      setShowSavedToast(true);
+      if (savedToastTimer.current) clearTimeout(savedToastTimer.current);
+      savedToastTimer.current = setTimeout(() => setShowSavedToast(false), 2600);
+    }
+  }, [fetcher.state, fetcher.data]);
+
   function handleSave() {
     const formData = new FormData();
     Object.entries(form).forEach(([k, v]) => formData.append(k, String(v)));
@@ -230,6 +240,18 @@ export default function Settings() {
     <Page>
       <TitleBar title={t("settings.titleBar")} />
         <BillingModal open={modalOpen} onNavigate={() => navigate("/app/billing")} t={t} features={subscribeFeatures} />
+        {showSavedToast && (
+          <div className="st-saved-toast">
+            <span className="st-saved-toast__ring">
+              <span className="st-saved-toast__icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </span>
+            </span>
+            <span className="st-saved-toast__title">{t("settings.saveBar.saved")}</span>
+          </div>
+        )}
       <div className="st-root">
         <div className="st-header">
           <div className="st-header__left">
@@ -253,7 +275,6 @@ export default function Settings() {
               <ToggleRow label={t("settings.pageDisplay.showPrice")} checked={form.showPrice} onChange={(v) => set("showPrice", v)} />
               <ToggleRow label={t("settings.pageDisplay.showAddToCart")} checked={form.showAddToCart} onChange={(v) => set("showAddToCart", v)} />
               <ToggleRow label={t("settings.pageDisplay.showVendor")} checked={form.showVendor} onChange={(v) => set("showVendor", v)} />
-              <ToggleRow label={t("settings.pageDisplay.showShareButton")} checked={form.showShareButton} onChange={(v) => set("showShareButton", v)} />
               <ToggleRow label={t("settings.pageDisplay.showItemCount")} checked={form.showItemCount} onChange={(v) => set("showItemCount", v)} />
               <div className="st-divider" />
               <div className="st-field">
@@ -265,18 +286,6 @@ export default function Settings() {
                   </select>
                 </div>
                 <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>{t("settings.pageDisplay.wishlistOpensAsHint")}</div>
-              </div>
-              <div className="st-divider" />
-              <div className="st-field">
-                <label className="st-field__label">{t("settings.pageDisplay.gridColumns")}</label>
-                <div className="st-field__select-wrap">
-                  <select className="st-field__select" value={form.gridColumns} onChange={(e) => set("gridColumns", e.target.value)}>
-                    <option value="2">{t("settings.pageDisplay.columnsOption", { n: 2 })}</option>
-                    <option value="3">{t("settings.pageDisplay.columnsOption", { n: 3 })}</option>
-                    <option value="4">{t("settings.pageDisplay.columnsOption", { n: 4 })}</option>
-                    <option value="5">{t("settings.pageDisplay.columnsOption", { n: 5 })}</option>
-                  </select>
-                </div>
               </div>
             </div>
           </div>
@@ -594,12 +603,6 @@ export default function Settings() {
         </div>
 
         <div className="st-save-bar">
-          <span className="st-save-hint">{isSaving ? t("settings.saveBar.savingHint") : t("settings.saveBar.savedHint")}</span>
-          {saved && (
-            <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 500, color: "#16a34a" }}>
-              <IconCheck /> {t("settings.saveBar.saved")}
-            </span>
-          )}
           <button className="st-save-btn" onClick={handleSave} disabled={isSaving}>
             {isSaving ? t("settings.saveBar.savingHint") : <><IconCheck />{t("settings.saveBar.save")}</>}
           </button>

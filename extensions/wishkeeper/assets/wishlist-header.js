@@ -155,6 +155,14 @@
       link.addEventListener("click", function (e) {
         if (displayMode === "popup") {
           e.preventDefault();
+          if (window.location.pathname.indexOf("/apps/wishlist/page") === 0) {
+            // Already on the standalone wishlist page itself — opening the
+            // popup on top of it is redundant, so send the shopper home
+            // and open the popup there instead.
+            try { sessionStorage.setItem("wl_open_popup_on_load", "1"); } catch (_) {}
+            window.location.href = "/";
+            return;
+          }
           openWishlistDrawer();
         }
       });
@@ -256,6 +264,13 @@
     observer.observe(document.body, { childList: true, subtree: true });
 
     inserted = insertIcon();
+
+    try {
+      if (sessionStorage.getItem("wl_open_popup_on_load") === "1") {
+        sessionStorage.removeItem("wl_open_popup_on_load");
+        setTimeout(openWishlistDrawer, 200);
+      }
+    } catch (_) {}
 
     setTimeout(function () {
       if (!disabledByMerchant && !document.getElementById("wl-header-link")) {

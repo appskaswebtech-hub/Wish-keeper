@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { useLoaderData, useNavigate, useFetcher } from "react-router";
@@ -32,7 +33,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const days = RANGE_DAYS[range] ?? null;
   const sinceDate = days ? new Date(Date.now() - days * 24 * 60 * 60 * 1000) : null;
 
-  const data2 = await getAllWishlists(store.id, page, 20, sinceDate);
+  const data2 = await getAllWishlists(store.id, page, 10, sinceDate);
   const subscription = await getActiveSubscription(admin);
   const hasActivePlan = !!subscription;
   syncShopPlanFromSubscription(session.shop, subscription).catch((err) =>
@@ -109,7 +110,7 @@ const IconTrash = () => (
 );
 
 function ConfirmDeleteModal({ label, onConfirm, onCancel, isDeleting, t }: { label: string; onConfirm: () => void; onCancel: () => void; isDeleting: boolean; t: (key: string, vars?: Record<string, string | number>) => string }) {
-  return (
+  return createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 100000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.45)" }} onClick={onCancel}>
       <div style={{ background: "#fff", borderRadius: 16, padding: "28px 26px", maxWidth: 380, width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#fee2e2", border: "1.5px solid rgba(239,68,68,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
@@ -137,7 +138,8 @@ function ConfirmDeleteModal({ label, onConfirm, onCancel, isDeleting, t }: { lab
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -252,7 +254,7 @@ function HistoryModal({ wishlistId, customerLabel, onClose, t }: { wishlistId: s
   const activity = fetcher.data?.activity || [];
   const productMap = fetcher.data?.productMap || {};
 
-  return (
+  return createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.45)" }} onClick={onClose}>
       <div style={{ background: "#fff", borderRadius: 16, padding: "28px 28px 20px", maxWidth: 620, width: "92%", maxHeight: "75vh", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }} onClick={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
@@ -320,14 +322,15 @@ function HistoryModal({ wishlistId, customerLabel, onClose, t }: { wishlistId: s
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
 function BillingModal({ open, onNavigate, t, features }: { open: boolean; onNavigate: () => void; t: (key: string, vars?: Record<string, string | number>) => string; features: string[] }) {
   if (!open) return null;
   const [bodyBefore, bodyAfter] = t("common.subscribeModal.body", { price: "@@PRICE@@" }).split("@@PRICE@@");
-  return (
+  return createPortal(
     <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.45)" }}>
       <div style={{ background: "#fff", borderRadius: 16, padding: "32px 28px", maxWidth: 420, width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", textAlign: "center" }}>
         <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#f9f1e1", border: "1.5px solid rgba(184,146,42,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
@@ -344,7 +347,8 @@ function BillingModal({ open, onNavigate, t, features }: { open: boolean; onNavi
           {t("common.subscribeModal.cta")}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -569,7 +573,7 @@ export default function WishlistAdmin() {
                   : customer?.name || customer?.email || (wl.customerId.length > 22 ? wl.customerId.slice(0, 22) + "…" : wl.customerId);
                 const lastActive = new Date(wl.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
                 const itemCount: number = wl._count.items;
-                const serialNo = (page - 1) * 20 + index + 1;
+                const serialNo = (page - 1) * 10 + index + 1;
 
                 return (
                   <tr key={wl.id} className="wl-table__row">

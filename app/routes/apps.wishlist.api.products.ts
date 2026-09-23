@@ -39,13 +39,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return dataResponse({ items: [], settings }, { headers: cors });
   }
 
-  const productIds = wishlist.items.map((item) => item.productId);
-  const gids = productIds.map((id) =>
-    id.startsWith("gid://") ? id : `gid://shopify/Product/${id}`
+  const productGids = wishlist.items.map((item) =>
+    item.productId.startsWith("gid://") ? item.productId : `gid://shopify/Product/${item.productId}`
   );
+  const variantGids = wishlist.items
+    .filter((item) => item.variantId)
+    .map((item) => (item.variantId!.startsWith("gid://") ? item.variantId! : `gid://shopify/ProductVariant/${item.variantId}`));
+  const gids = [...productGids, ...variantGids];
 
   const query = `
-    query getProducts($ids: [ID!]!) {
+    query getProductsAndVariants($ids: [ID!]!) {
       nodes(ids: $ids) {
         ... on Product {
           id
@@ -60,6 +63,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
             edges {
               node { id availableForSale }
             }
+          }
+        }
+        ... on ProductVariant {
+          id
+          title
+          availableForSale
+          price { amount currencyCode }
+          image { url altText }
+          selectedOptions { name value }
+          product {
+            id
+            handle
+            title
+            vendor
+            featuredImage { url altText }
           }
         }
       }
@@ -86,11 +104,37 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const nodes = result?.data?.nodes || [];
 
     const enrichedItems = wishlist.items.map((item) => {
-      const gid = item.productId.startsWith("gid://")
+      const productGid = item.productId.startsWith("gid://")
         ? item.productId
         : `gid://shopify/Product/${item.productId}`;
+      const variantGid = item.variantId
+        ? (item.variantId.startsWith("gid://") ? item.variantId : `gid://shopify/ProductVariant/${item.variantId}`)
+        : null;
 
-      const product = nodes.find((n: any) => n?.id === gid);
+      const variant = variantGid ? nodes.find((n: any) => n?.id === variantGid) : null;
+      const product = nodes.find((n: any) => n?.id === productGid);
+
+      if (variant) {
+        const isDefaultVariant = variant.title === "Default Title";
+        return {
+          id: item.id,
+          productId: item.productId,
+          variantId: item.variantId,
+          addedAt: item.addedAt,
+          product: {
+            title: variant.product?.title || "",
+            handle: variant.product?.handle || "",
+            vendor: variant.product?.vendor,
+            image: variant.image?.url || variant.product?.featuredImage?.url || null,
+            imageAlt: variant.image?.altText || variant.product?.featuredImage?.altText || variant.product?.title,
+            price: variant.price?.amount || "0",
+            currency: variant.price?.currencyCode || "USD",
+            available: variant.availableForSale ?? true,
+            variantTitle: isDefaultVariant ? null : variant.title,
+            selectedOptions: variant.selectedOptions || null,
+          },
+        };
+      }
 
       return {
         id: item.id,
@@ -107,6 +151,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
               price: product.priceRange?.minVariantPrice?.amount || "0",
               currency: product.priceRange?.minVariantPrice?.currencyCode || "USD",
               available: product.variants?.edges?.[0]?.node?.availableForSale ?? true,
+              variantTitle: null,
+              selectedOptions: null,
             }
           : null,
       };

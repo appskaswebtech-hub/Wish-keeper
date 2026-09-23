@@ -492,6 +492,87 @@
     color: var(--text-muted);
 }
 
+/* ── Saved confirmation toast ────────────────────────────────────────────── */
+@keyframes stSavedPopIn {
+    0% { opacity: 0; transform: translate(-50%, -10px) scale(0.92); }
+    55% { opacity: 1; transform: translate(-50%, 2px) scale(1.015); }
+    100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+@keyframes stSavedPopOut {
+    0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -10px) scale(0.96); }
+}
+
+@keyframes stSavedRingPulse {
+    0% { box-shadow: 0 0 0 0 rgba(184, 146, 42, 0.35); }
+    70% { box-shadow: 0 0 0 7px rgba(184, 146, 42, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(184, 146, 42, 0); }
+}
+
+@keyframes stSavedCheckDraw {
+    from { stroke-dashoffset: 20; }
+    to { stroke-dashoffset: 0; }
+}
+
+.st-saved-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 24px 11px 12px;
+    background: linear-gradient(180deg, #fffdf8, #fdfaf2);
+    border: 1px solid rgba(184, 146, 42, 0.22);
+    border-radius: 100px;
+    box-shadow: 0 16px 40px rgba(26, 22, 18, 0.14), 0 2px 10px rgba(184, 146, 42, 0.10);
+    animation: stSavedPopIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both,
+               stSavedPopOut 0.4s ease 2.2s forwards;
+}
+
+.st-saved-toast__ring {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #f9f1e1;
+    border: 1px solid rgba(184, 146, 42, 0.28);
+    flex-shrink: 0;
+    animation: stSavedRingPulse 1.4s ease-out 0.15s;
+}
+
+.st-saved-toast__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--gold, #b8922a);
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.st-saved-toast__icon svg {
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
+    animation: stSavedCheckDraw 0.35s ease 0.25s forwards;
+}
+
+.st-saved-toast__title {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.01em;
+    color: #1a1612;
+    white-space: nowrap;
+}
+
 @keyframes stFadeUp {
     from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: translateY(0); }

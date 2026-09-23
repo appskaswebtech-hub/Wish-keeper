@@ -212,11 +212,8 @@ export async function removeWishlistItem(
   const wishlist = await prisma.wishlist.findFirst({ where: { storeId, customerId } });
   if (!wishlist) return null;
 
-  // Match by product only, not variant: the "is this saved?" check (isInWishlist)
-  // is product-level, so removal must be too, or a variant-specific remove can
-  // silently match nothing when the item was originally saved without a variant.
   const result = await prisma.wishlistItem.deleteMany({
-    where: { wishlistId: wishlist.id, productId },
+    where: { wishlistId: wishlist.id, productId, variantId: variantId || null },
   });
   if (result.count > 0) {
     await prisma.wishlistActivity.create({
@@ -271,11 +268,16 @@ export async function getTopShoppers(storeId: string, limit = 5) {
   return wishlists;
 }
 
-export async function isInWishlist(storeId: string, customerId: string, productId: string) {
+export async function isInWishlist(
+  storeId: string,
+  customerId: string,
+  productId: string,
+  variantId?: string | null
+) {
   const wishlist = await prisma.wishlist.findFirst({ where: { storeId, customerId } });
   if (!wishlist) return false;
   const item = await prisma.wishlistItem.findFirst({
-    where: { wishlistId: wishlist.id, productId },
+    where: { wishlistId: wishlist.id, productId, variantId: variantId || null },
   });
   return !!item;
 }

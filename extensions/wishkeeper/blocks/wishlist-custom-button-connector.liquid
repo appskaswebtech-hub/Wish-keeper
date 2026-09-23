@@ -5,8 +5,6 @@
   without requiring any theme code edits beyond enabling this app embed once.
 {% endcomment %}
 
-{% if block.settings.enabled %}
-
 <script>
   window.__wlCustomBtnConfig = {
     shop: {{ shop.permanent_domain | json }},
@@ -17,26 +15,10 @@
 </script>
 <script src="{{ 'wishlist-custom-button.js' | asset_url }}" defer></script>
 
-{% endif %}
-
 {% schema %}
 {
   "name": "Wishlist Btn Connector",
   "target": "body",
-  "settings": [
-    {
-      "type": "checkbox",
-      "id": "enabled",
-      "label": "Enable",
-      "default": true
-    },
-    {
-      "type": "text",
-      "id": "selector",
-      "label": "Button CSS selector",
-      "default": ".st-wishlist-button",
-      "info": "Matches your theme's existing wishlist button. It must have a data-handle attribute with the product handle."
-    }
-  ]
+  "settings": []
 }
 {% endschema %}

@@ -121,7 +121,6 @@
       if (panel) { panel.style.transform = "scale(0.94)"; panel.style.opacity = "0"; }
       setTimeout(function () { if (overlay.parentElement) overlay.remove(); }, 250);
     }
-    console.log("[WL DEBUG] init start. cachedSettings:", cachedSettings, "disabledByMerchant:", disabledByMerchant);
 
     function buildIconHtml() {
       if (initialCustomSvg && initialCustomSvg.trim()) {
@@ -175,10 +174,9 @@
           }
         }
 
-        console.log("[WL DEBUG] insertIcon result:", result, "forceFallback:", !!forceFallback);
         return result;
       } catch (err) {
-        console.log("[WL DEBUG] insertIcon threw:", err && err.message);
+        console.error("[WishKeeper] header icon insertion failed:", err && err.message);
         return false;
       }
     }
@@ -200,6 +198,7 @@
         ".header__controls",
         "header .utility-bar",
         ".header-inner",
+        ".site-nav__icons",
       ];
 
       var container = null;

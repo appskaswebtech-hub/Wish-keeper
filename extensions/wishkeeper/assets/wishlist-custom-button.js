@@ -110,7 +110,6 @@
   function init() {
     var cfg = window.__wlCustomBtnConfig;
     if (!cfg) { console.warn(LOG, "no config found on window.__wlCustomBtnConfig"); return; }
-    console.log(LOG, "init start", cfg);
 
     var shop = cfg.shop;
     var proxyUrl = cfg.proxyUrl;
@@ -132,7 +131,6 @@
 
     if (!customerId) {
       customerId = getGuestId();
-      console.log(LOG, "using guest customerId", customerId);
     } else {
       var guestId = null;
       try { guestId = localStorage.getItem(GUEST_KEY); } catch (_) {}
@@ -150,10 +148,8 @@
 
     function getProductInfo(handle) {
       if (productInfoCache[handle]) return productInfoCache[handle];
-      console.log(LOG, "fetching product info for handle", handle);
       productInfoCache[handle] = fetch("/products/" + encodeURIComponent(handle) + ".js")
         .then(function (r) {
-          console.log(LOG, "/products/" + handle + ".js status", r.status);
           if (!r.ok) throw new Error("product fetch failed with status " + r.status);
           return r.json();
         })
@@ -162,7 +158,6 @@
             productId: String(p.id),
             variantId: p.variants && p.variants[0] ? String(p.variants[0].id) : null
           };
-          console.log(LOG, "resolved product info", info);
           return info;
         })
         .catch(function (err) {
@@ -177,14 +172,12 @@
         btn.disabled = true;
         btn.style.opacity = "0.35";
         btn.style.cursor = "not-allowed";
-        console.log(LOG, "button disabled: no active plan", btn);
       }
     }
 
     function setupButton(btn) {
       if (btn.dataset.wlCustomInitialized) return;
       btn.dataset.wlCustomInitialized = "true";
-      console.log(LOG, "setting up button", btn);
 
       var handle = btn.dataset.handle || findNearbyProductHandle(btn) || getPageProductHandle();
       if (!handle) { console.warn(LOG, "button has no data-handle and no product could be resolved nearby or from the page URL, skipping", btn); return; }
@@ -203,7 +196,6 @@
         var checkUrl = proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) +
           "&customerId=" + encodeURIComponent(customerId) +
           "&productId=" + encodeURIComponent(productId) + "&action=check";
-        if (!silent) console.log(LOG, "checking wishlist state", checkUrl);
         return fetch(checkUrl)
           .then(function (r) { return r.json(); })
           .then(function (d) {
@@ -227,14 +219,11 @@
       });
 
       btn.addEventListener("click", function () {
-        console.log(LOG, "click. ready =", ready, "disabled =", btn.disabled);
         if (!ready || btn.disabled) {
-          console.warn(LOG, "click ignored: not ready yet or disabled");
           return;
         }
         var action = isActive ? "remove" : "add";
         btn.classList.add("loading");
-        console.log(LOG, "sending action", action, "productId", productId, "variantId", variantId);
 
         fetch(proxyUrl + "/api/wishlist", {
           method: "POST",
@@ -248,7 +237,6 @@
           })
         })
           .then(function (res) {
-            console.log(LOG, "action response status", res.status);
             if (!res.ok) return res.text().then(function (t) { console.error(LOG, "action failed body", t); });
             isActive = !isActive;
             btn.classList.toggle("active", isActive);
@@ -294,23 +282,18 @@
 
     function scan() {
       var found = findAllMatches();
-      console.log(LOG, "scan found", found.length, "button(s)");
       found.forEach(setupButton);
     }
 
     var settingsUrl = proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&action=settings";
-    console.log(LOG, "fetching settings", settingsUrl);
     fetch(settingsUrl)
       .then(function (r) {
-        console.log(LOG, "settings response status", r.status);
         return r.json();
       })
       .then(function (d) {
-        console.log(LOG, "settings response body", d);
         hasActivePlan = d.hasActivePlan !== false;
         if (d.settings && d.settings.customWishlistButtonHtml) {
           customMatcher = deriveMatcher(d.settings.customWishlistButtonHtml);
-          console.log(LOG, "derived custom button matcher", customMatcher);
         }
         if (hasActivePlan === false) {
           findAllMatches().forEach(applyDisabledState);

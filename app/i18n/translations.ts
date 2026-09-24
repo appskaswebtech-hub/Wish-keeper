@@ -251,6 +251,8 @@ const en: Dict = {
       desc: "Already have your own \"Add to Wishlist\" button in your theme? Paste its HTML and we'll wire it up automatically — no code editing needed.",
       htmlLabel: "Button HTML",
       tip: "Tip: on your storefront, right-click your existing wishlist button, choose \"Inspect\", then copy and paste that element's HTML here.",
+      iconCssLabel: "Icon CSS (optional)",
+      iconCssTip: "Want a heart icon on your button? Paste this into your theme's CSS or the Custom CSS box above. The heart is grey until the product is saved, then takes the icon color from these settings. Replace .st-wishlist-button with your button's class.",
     },
     manualButton: {
       title: "Add to Wishlist Button (Manual Placement)",
@@ -670,6 +672,8 @@ const de: Dict = {
       desc: "Haben Sie bereits einen eigenen \"Zur Wunschliste hinzufügen\"-Button in Ihrem Theme? Fügen Sie dessen HTML ein, wir verbinden ihn automatisch — keine Code-Bearbeitung nötig.",
       htmlLabel: "Button-HTML",
       tip: "Tipp: Klicken Sie im Shop mit der rechten Maustaste auf Ihren vorhandenen Wunschlisten-Button, wählen Sie \"Untersuchen\" und fügen Sie das HTML des Elements hier ein.",
+      iconCssLabel: "Symbol-CSS (optional)",
+      iconCssTip: "Möchten Sie ein Herz-Symbol auf Ihrem Button? Fügen Sie dies in das CSS Ihres Themes oder in das Feld \"Eigenes CSS\" oben ein. Das Herz ist grau, bis das Produkt gespeichert ist, und übernimmt dann die Symbolfarbe aus diesen Einstellungen. Ersetzen Sie .st-wishlist-button durch die Klasse Ihres Buttons.",
     },
     manualButton: {
       title: "Zur-Wunschliste-Button (Manuelle Platzierung)",
@@ -1089,6 +1093,8 @@ const es: Dict = {
       desc: "¿Ya tienes tu propio botón \"Añadir a la lista de deseos\" en tu tema? Pega su HTML y lo conectaremos automáticamente — sin editar código.",
       htmlLabel: "HTML del botón",
       tip: "Consejo: en tu tienda, haz clic derecho en tu botón de lista de deseos existente, elige \"Inspeccionar\" y pega aquí el HTML de ese elemento.",
+      iconCssLabel: "CSS del icono (opcional)",
+      iconCssTip: "¿Quieres un icono de corazón en tu botón? Pega esto en el CSS de tu tema o en el cuadro de CSS personalizado de arriba. El corazón es gris hasta que se guarda el producto y luego toma el color del icono de estos ajustes. Sustituye .st-wishlist-button por la clase de tu botón.",
     },
     manualButton: {
       title: "Botón Añadir a la lista de deseos (colocación manual)",
@@ -1508,6 +1514,8 @@ const fr: Dict = {
       desc: "Vous avez déjà votre propre bouton \"Ajouter à la liste de souhaits\" dans votre thème ? Collez son HTML et nous le connecterons automatiquement — aucune modification de code nécessaire.",
       htmlLabel: "HTML du bouton",
       tip: "Astuce : sur votre boutique, faites un clic droit sur votre bouton de liste de souhaits existant, choisissez \"Inspecter\", puis copiez-collez le HTML de cet élément ici.",
+      iconCssLabel: "CSS de l'icône (facultatif)",
+      iconCssTip: "Vous voulez une icône de cœur sur votre bouton ? Collez ceci dans le CSS de votre thème ou dans la zone CSS personnalisé ci-dessus. Le cœur est gris tant que le produit n'est pas enregistré, puis prend la couleur d'icône de ces paramètres. Remplacez .st-wishlist-button par la classe de votre bouton.",
     },
     manualButton: {
       title: "Bouton Ajouter à la liste de souhaits (placement manuel)",
@@ -1927,6 +1935,8 @@ const it: Dict = {
       desc: "Hai già un tuo pulsante \"Aggiungi alla lista desideri\" nel tema? Incolla il suo HTML e lo collegheremo automaticamente — nessuna modifica al codice necessaria.",
       htmlLabel: "HTML del pulsante",
       tip: "Suggerimento: nel tuo negozio, fai clic destro sul pulsante wishlist esistente, scegli \"Ispeziona\" e incolla qui l'HTML di quell'elemento.",
+      iconCssLabel: "CSS dell'icona (facoltativo)",
+      iconCssTip: "Vuoi un'icona a cuore sul tuo pulsante? Incolla questo nel CSS del tuo tema o nella casella CSS personalizzato qui sopra. Il cuore è grigio finché il prodotto non è salvato, poi assume il colore dell'icona di queste impostazioni. Sostituisci .st-wishlist-button con la classe del tuo pulsante.",
     },
     manualButton: {
       title: "Pulsante Aggiungi alla wishlist (posizionamento manuale)",

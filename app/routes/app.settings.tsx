@@ -207,6 +207,36 @@ export default function Settings() {
   </button>
 </div>`;
 
+  const [iconCssCopied, setIconCssCopied] = useState(false);
+  const ICON_CSS_SNIPPET = `.st-wishlist-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+}
+.st-wishlist-button::before {
+  content: "";
+  width: 1.2em;
+  height: 1.2em;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.st-wishlist-button.active {
+  color: var(--wl-icon-color, #e74c6f);
+}
+.st-wishlist-button.active::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='2'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='2'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E");
+}`;
+
+  function copyIconCssSnippet() {
+    navigator.clipboard.writeText(ICON_CSS_SNIPPET).then(() => {
+      setIconCssCopied(true);
+      setTimeout(() => setIconCssCopied(false), 2000);
+    });
+  }
+
   function copyButtonSlotSnippet() {
     navigator.clipboard.writeText(BUTTON_SLOT_SNIPPET).then(() => {
       setButtonSlotCopied(true);
@@ -523,6 +553,18 @@ export default function Settings() {
                   value={form.customWishlistButtonHtml}
                   onChange={(e) => set("customWishlistButtonHtml", e.target.value)}
                 />
+              </div>
+              <div className="st-code-window" style={{ marginTop: 14 }}>
+                <div className="st-code-window__head">
+                  <span className="st-code-window__label">{t("settings.customButton.iconCssLabel")}</span>
+                  <button type="button" className="st-copy-btn" onClick={copyIconCssSnippet}>
+                    {iconCssCopied ? t("settings.iconAppearance.copied") : t("settings.iconAppearance.copy")}
+                  </button>
+                </div>
+                <p style={{ fontSize: 11, color: "var(--text-muted)", margin: "10px 14px 0", lineHeight: 1.5 }}>
+                  {t("settings.customButton.iconCssTip")}
+                </p>
+                <textarea className="st-code-window__textarea" readOnly rows={8} value={ICON_CSS_SNIPPET} onFocus={(e) => e.target.select()} />
               </div>
             </div>
           </div>

@@ -221,12 +221,24 @@ export async function removeWishlistItem(
   const wishlist = await prisma.wishlist.findFirst({ where: { storeId, customerId } });
   if (!wishlist) return null;
 
-  const result = await prisma.wishlistItem.deleteMany({
-    where: { wishlistId: wishlist.id, productId, variantId: variantId || null },
-  });
+  // A caller that doesn't send a variant at all (collection hearts, custom
+  // buttons) works at product level, so it removes every saved variant of the
+  // product. An explicit variant, including an explicit null, stays exact.
+  const where =
+    variantId === undefined
+      ? { wishlistId: wishlist.id, productId }
+      : { wishlistId: wishlist.id, productId, variantId: variantId || null };
+
+  const rows = await prisma.wishlistItem.findMany({ where });
+  const result = await prisma.wishlistItem.deleteMany({ where });
   if (result.count > 0) {
-    await prisma.wishlistActivity.create({
-      data: { wishlistId: wishlist.id, productId, variantId: variantId || null, action: "removed" },
+    await prisma.wishlistActivity.createMany({
+      data: rows.map((row) => ({
+        wishlistId: wishlist.id,
+        productId,
+        variantId: row.variantId,
+        action: "removed",
+      })),
     });
   }
   return result;
@@ -285,8 +297,10 @@ export async function isInWishlist(
 ) {
   const wishlist = await prisma.wishlist.findFirst({ where: { storeId, customerId } });
   if (!wishlist) return false;
+  // A caller that doesn't know the variant (e.g. a custom button) is asking
+  // "is this product saved at all?", so only pin the variant when one is given.
   const item = await prisma.wishlistItem.findFirst({
-    where: { wishlistId: wishlist.id, productId, variantId: variantId || null },
+    where: { wishlistId: wishlist.id, productId, ...(variantId ? { variantId } : {}) },
   });
   return !!item;
 }

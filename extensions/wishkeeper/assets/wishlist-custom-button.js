@@ -117,6 +117,23 @@
     var customerId = cfg.customerId;
     var customMatcher = null;
 
+    // Apply the last known icon color immediately, so it doesn't flash away
+    // while settings are still loading after a page refresh.
+    var ICON_COLOR_KEY = "wl_icon_color";
+    try {
+      var cachedIconColor = localStorage.getItem(ICON_COLOR_KEY);
+      if (cachedIconColor) document.documentElement.style.setProperty("--wl-icon-color", cachedIconColor);
+    } catch (_) {}
+
+    // Each set-up button registers a painter here, so every button can be
+    // recolored once the real icon color arrives from settings.
+    var painters = [];
+    function currentIconColor() {
+      var c = "";
+      try { c = getComputedStyle(document.documentElement).getPropertyValue("--wl-icon-color").trim(); } catch (_) {}
+      return c || "#e74c6f";
+    }
+
     var GUEST_KEY = "wishlist_guest_id";
 
     function getGuestId() {
@@ -167,6 +184,16 @@
       return productInfoCache[handle];
     }
 
+    // Updates only the button's text, so an inline icon (or any other markup
+    // the merchant put inside the button) is left in place. Buttons with no
+    // child elements behave exactly as before.
+    function setBtnLabel(btn, text) {
+      if (!btn.children.length) { btn.textContent = text; return; }
+      for (var n = btn.firstChild; n; n = n.nextSibling) {
+        if (n.nodeType === 3 && n.textContent.trim()) { n.textContent = text; return; }
+      }
+    }
+
     function applyDisabledState(btn) {
       if (hasActivePlan === false) {
         btn.disabled = true;
@@ -189,19 +216,81 @@
       var variantId = null;
       var ready = false;
 
+      // Same behavior as the built-in icon: the settings color shows only
+      // while the product is saved, and is removed again when it isn't.
+      function paintIcon() {
+        var active = btn.classList.contains("active");
+        // Many themes style the saved state with their own "is-active" class.
+        btn.classList.toggle("is-active", active);
+        // An outline + filled icon pair means the merchant's own CSS swaps
+        // and colors the icons, so their colors are left untouched.
+        if (btn.querySelectorAll("svg").length > 1) return;
+        var color = currentIconColor();
+        var icons = btn.querySelectorAll("svg, i");
+        if (!icons.length) {
+          if (active) btn.style.color = color; else btn.style.removeProperty("color");
+          return;
+        }
+        Array.prototype.forEach.call(icons, function (icon) {
+          var isSvg = icon.tagName.toLowerCase() === "svg";
+          var targets = [icon];
+          if (isSvg) targets = targets.concat(Array.prototype.slice.call(icon.querySelectorAll("path, circle, rect, polygon, ellipse, line, polyline")));
+          targets.forEach(function (el) {
+            var fillAttr = el.getAttribute && el.getAttribute("fill");
+            var strokeAttr = el.getAttribute && el.getAttribute("stroke");
+            if (active) {
+              if (el === icon) el.style.color = color;
+              if (isSvg && (el === icon || (fillAttr && fillAttr !== "none"))) el.style.fill = color;
+              if (isSvg && strokeAttr && strokeAttr !== "none") el.style.stroke = color;
+            } else {
+              el.style.removeProperty("color");
+              el.style.removeProperty("fill");
+              el.style.removeProperty("stroke");
+            }
+          });
+        });
+      }
+      painters.push(paintIcon);
+
+      var activeKey = "wl_btn_active:" + customerId + ":" + handle;
+      function cacheActive(v) {
+        try { if (v) localStorage.setItem(activeKey, "1"); else localStorage.removeItem(activeKey); } catch (_) {}
+      }
+      // Show the last known saved state right away on refresh; the server
+      // check below then confirms or corrects it.
+      try {
+        if (localStorage.getItem(activeKey) === "1") {
+          btn.classList.add("active");
+          setBtnLabel(btn, removeText);
+          paintIcon();
+        }
+      } catch (_) {}
+
       applyDisabledState(btn);
+
+      // Every variant of this product that is currently saved. This button
+      // can't know which variant a shopper picked, so it reads the whole
+      // wishlist and treats the product as saved if ANY variant is in it. That
+      // works the same on every server version.
+      var savedVariants = [];
 
       function refreshState(silent) {
         if (!productId) return;
-        var checkUrl = proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) +
-          "&customerId=" + encodeURIComponent(customerId) +
-          "&productId=" + encodeURIComponent(productId) + "&action=check";
-        return fetch(checkUrl)
+        var listUrl = proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) +
+          "&customerId=" + encodeURIComponent(customerId);
+        return fetch(listUrl)
           .then(function (r) { return r.json(); })
           .then(function (d) {
-            isActive = !!d.inWishlist;
+            if (!d || !d.wishlist) throw new Error("wishlist unavailable");
+            var items = d.wishlist.items || [];
+            savedVariants = items
+              .filter(function (i) { return String(i.productId) === String(productId); })
+              .map(function (i) { return i.variantId || null; });
+            isActive = savedVariants.length > 0;
             btn.classList.toggle("active", isActive);
-            btn.textContent = isActive ? removeText : addText;
+            setBtnLabel(btn, isActive ? removeText : addText);
+            cacheActive(isActive);
+            paintIcon();
             ready = true;
           })
           .catch(function (err) {
@@ -225,22 +314,36 @@
         var action = isActive ? "remove" : "add";
         btn.classList.add("loading");
 
-        fetch(proxyUrl + "/api/wishlist", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            shop: shop,
-            customerId: customerId,
-            productId: productId,
-            variantId: variantId,
-            action: action
-          })
-        })
-          .then(function (res) {
-            if (!res.ok) return res.text().then(function (t) { console.error(LOG, "action failed body", t); });
+        function post(vid, act) {
+          return fetch(proxyUrl + "/api/wishlist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              shop: shop,
+              customerId: customerId,
+              productId: productId,
+              variantId: vid,
+              action: act
+            })
+          });
+        }
+
+        // Removing takes out every saved variant of the product, one request
+        // per variant, so nothing is left behind to "come back" on refresh.
+        var requests = action === "remove"
+          ? (savedVariants.length ? savedVariants : [variantId]).map(function (vid) { return post(vid, "remove"); })
+          : [post(variantId, "add")];
+
+        Promise.all(requests)
+          .then(function (responses) {
+            var failed = responses.filter(function (r) { return !r.ok; })[0];
+            if (failed) return failed.text().then(function (t) { console.error(LOG, "action failed body", t); });
+            savedVariants = action === "add" ? [variantId] : [];
             isActive = !isActive;
             btn.classList.toggle("active", isActive);
-            btn.textContent = isActive ? removeText : addText;
+            setBtnLabel(btn, isActive ? removeText : addText);
+            cacheActive(isActive);
+            paintIcon();
             if (window.__wlBumpBadge) window.__wlBumpBadge(action === "add" ? 1 : -1);
             if (window.__wlRefreshBadge) window.__wlRefreshBadge();
 
@@ -285,6 +388,11 @@
       found.forEach(setupButton);
     }
 
+    // Set up buttons matching the default selector right away instead of
+    // waiting for the settings request; scan() runs again once it finishes
+    // to pick up any button matched from the pasted HTML.
+    scan();
+
     var settingsUrl = proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&action=settings";
     fetch(settingsUrl)
       .then(function (r) {
@@ -292,6 +400,20 @@
       })
       .then(function (d) {
         hasActivePlan = d.hasActivePlan !== false;
+        if (d.settings) {
+          var iconColor = d.settings.customIconColor || d.settings.activeColor;
+          if (iconColor) {
+            document.documentElement.style.setProperty("--wl-icon-color", iconColor);
+            try { localStorage.setItem(ICON_COLOR_KEY, iconColor); } catch (_) {}
+            painters.forEach(function (paint) { paint(); });
+          }
+          if (d.settings.customCss && !document.getElementById("wl-custom-css")) {
+            var cssEl = document.createElement("style");
+            cssEl.id = "wl-custom-css";
+            cssEl.textContent = d.settings.customCss;
+            document.head.appendChild(cssEl);
+          }
+        }
         if (d.settings && d.settings.customWishlistButtonHtml) {
           customMatcher = deriveMatcher(d.settings.customWishlistButtonHtml);
         }

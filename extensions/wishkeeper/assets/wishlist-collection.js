@@ -59,11 +59,15 @@
   var TEXT_ADDED_TOAST = (window.__wlCollectionConfig && window.__wlCollectionConfig.textAddedToast) || "Added to Wishlist";
   var TEXT_REMOVED_TOAST = (window.__wlCollectionConfig && window.__wlCollectionConfig.textRemovedToast) || "Removed from Wishlist";
 
+  var TEXT_CHOOSE = "Choose an option";
+  var TEXT_SOLDOUT = "Sold out";
+  var TEXT_CANCEL = "Cancel";
+
   var collI18n = {
-    de: { add: "Zur Wunschliste hinzufügen", remove: "Von der Wunschliste entfernen", addedToast: "Zur Wunschliste hinzugefügt", removedToast: "Von der Wunschliste entfernt" },
-    es: { add: "Añadir a la lista de deseos", remove: "Eliminar de la lista de deseos", addedToast: "Añadido a la lista de deseos", removedToast: "Eliminado de la lista de deseos" },
-    fr: { add: "Ajouter à la liste de souhaits", remove: "Retirer de la liste de souhaits", addedToast: "Ajouté à la liste de souhaits", removedToast: "Retiré de la liste de souhaits" },
-    it: { add: "Aggiungi alla lista dei desideri", remove: "Rimuovi dalla lista dei desideri", addedToast: "Aggiunto alla lista dei desideri", removedToast: "Rimosso dalla lista dei desideri" }
+    de: { add: "Zur Wunschliste hinzufügen", remove: "Von der Wunschliste entfernen", addedToast: "Zur Wunschliste hinzugefügt", removedToast: "Von der Wunschliste entfernt", choose: "Option wählen", soldOut: "Ausverkauft", cancel: "Abbrechen" },
+    es: { add: "Añadir a la lista de deseos", remove: "Eliminar de la lista de deseos", addedToast: "Añadido a la lista de deseos", removedToast: "Eliminado de la lista de deseos", choose: "Elige una opción", soldOut: "Agotado", cancel: "Cancelar" },
+    fr: { add: "Ajouter à la liste de souhaits", remove: "Retirer de la liste de souhaits", addedToast: "Ajouté à la liste de souhaits", removedToast: "Retiré de la liste de souhaits", choose: "Choisissez une option", soldOut: "Épuisé", cancel: "Annuler" },
+    it: { add: "Aggiungi alla lista dei desideri", remove: "Rimuovi dalla lista dei desideri", addedToast: "Aggiunto alla lista dei desideri", removedToast: "Rimosso dalla lista dei desideri", choose: "Scegli un'opzione", soldOut: "Esaurito", cancel: "Annulla" }
   };
   if (PROXY && SHOP) {
     fetch(PROXY + "/api/wishlist?shop=" + encodeURIComponent(SHOP) + "&action=settings")
@@ -75,6 +79,9 @@
           TEXT_REMOVE = collI18n[lang].remove;
           TEXT_ADDED_TOAST = collI18n[lang].addedToast;
           TEXT_REMOVED_TOAST = collI18n[lang].removedToast;
+          TEXT_CHOOSE = collI18n[lang].choose;
+          TEXT_SOLDOUT = collI18n[lang].soldOut;
+          TEXT_CANCEL = collI18n[lang].cancel;
         }
       })
       .catch(function () {});
@@ -96,6 +103,8 @@
   }
 
   var wishlistedIds = new Set();
+  // Every saved row (a product can be saved under several variants).
+  var wishlistRows = [];
   var productIdCache = {};
 
   if (!document.getElementById("wl-coll-anim")) {
@@ -281,54 +290,282 @@
     return wrap;
   }
 
-  function toggleWishlist(btn, productId) {
-    var isActive = btn.classList.contains("active");
-    var action = isActive ? "remove" : "add";
+  // ─── Variant chooser (products with more than one variant) ─────────────────
+  var productJsonCache = {};
 
-    if (action === "add") {
-      btn.classList.add("wl-c-clicked");
-
-      var rp1 = document.createElement("span");
-      rp1.className = "wl-c-ripple";
-      btn.appendChild(rp1);
-      rp1.addEventListener("animationend", function () { rp1.remove(); });
-
-      var rp2 = document.createElement("span");
-      rp2.className = "wl-c-ripple2";
-      btn.appendChild(rp2);
-      rp2.addEventListener("animationend", function () { rp2.remove(); });
-
-      var fh = document.createElement("span");
-      fh.className = "wl-c-float";
-      fh.textContent = "♥";
-      fh.style.color = ACTIVE_COLOR;
-      btn.appendChild(fh);
-      fh.addEventListener("animationend", function () { fh.remove(); });
-
-      setTimeout(function () { btn.classList.remove("wl-c-clicked"); }, 750);
+  function getProductJson(handle) {
+    if (!handle) return Promise.resolve(null);
+    if (!productJsonCache[handle]) {
+      productJsonCache[handle] = fetch("/products/" + encodeURIComponent(handle) + ".js")
+        .then(function (r) { if (!r.ok) throw new Error("status " + r.status); return r.json(); })
+        .catch(function () { delete productJsonCache[handle]; return null; });
     }
+    return productJsonCache[handle];
+  }
+
+  function escHtml(s) {
+    var d = document.createElement("div");
+    d.textContent = String(s == null ? "" : s);
+    return d.innerHTML.replace(/"/g, "&quot;");
+  }
+
+  function formatMoney(cents) {
+    var cur = (window.Shopify && window.Shopify.currency && window.Shopify.currency.active) || "USD";
+    try {
+      return new Intl.NumberFormat(document.documentElement.lang || undefined, { style: "currency", currency: cur }).format(cents / 100);
+    } catch (e) {
+      return (cents / 100).toFixed(2);
+    }
+  }
+
+  function getProductOptions(product) {
+    var names = [];
+    var opts = product.options || [];
+    for (var i = 0; i < opts.length; i++) names.push(typeof opts[i] === "string" ? opts[i] : opts[i].name);
+    var list = [];
+    for (var n = 0; n < names.length; n++) {
+      var vals = [];
+      for (var v = 0; v < product.variants.length; v++) {
+        var val = product.variants[v]["option" + (n + 1)];
+        if (val != null && vals.indexOf(val) === -1) vals.push(val);
+      }
+      list.push({ name: names[n], values: vals });
+    }
+    return list;
+  }
+
+  function findVariantByOptions(product, sel) {
+    for (var i = 0; i < product.variants.length; i++) {
+      var v = product.variants[i];
+      var ok = true;
+      for (var k = 0; k < sel.length; k++) {
+        if (v["option" + (k + 1)] !== sel[k]) { ok = false; break; }
+      }
+      if (ok) return v;
+    }
+    return null;
+  }
+
+  function ensureChooserStyles() {
+    if (document.getElementById("wl-vc-styles")) return;
+    var s = document.createElement("style");
+    s.id = "wl-vc-styles";
+    s.textContent =
+      ".wl-vc-overlay{position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}" +
+      ".wl-vc-card{position:relative;background:#fff;color:#1a1612;border-radius:18px;width:100%;max-width:720px;max-height:90vh;overflow:auto;padding:30px;box-shadow:0 24px 70px rgba(0,0,0,.28);box-sizing:border-box;font-family:inherit;text-align:left;display:grid;grid-template-columns:260px minmax(0,1fr);gap:30px;align-items:start}" +
+      ".wl-vc-close{position:absolute;top:12px;right:14px;width:32px;height:32px;border:0;background:transparent;color:#6b7280;font-size:22px;line-height:1;cursor:pointer;border-radius:50%}" +
+      ".wl-vc-media{min-width:0}" +
+      ".wl-vc-body{min-width:0;padding-right:22px}" +
+      ".wl-vc-img{display:block;width:100%;height:auto;aspect-ratio:1/1;border-radius:14px;object-fit:cover;background:#f3f4f6}" +
+      ".wl-vc-title{font-size:20px;font-weight:700;line-height:1.3;margin:0}" +
+      ".wl-vc-price{font-size:18px;font-weight:600;margin-top:6px}" +
+      ".wl-vc-note{font-size:12px;color:#b45309;margin-top:4px;min-height:16px}" +
+      ".wl-vc-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:16px 0 8px;font-weight:600}" +
+      ".wl-vc-chips{display:flex;flex-wrap:wrap;gap:8px}" +
+      ".wl-vc-chip{padding:8px 14px;border:1px solid #d1d5db;background:#fff;color:inherit;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}" +
+      ".wl-vc-chip[aria-pressed=true]{border-color:var(--wl-vc-accent);box-shadow:0 0 0 1px var(--wl-vc-accent);font-weight:600}" +
+      ".wl-vc-chip.wl-vc-soldout{opacity:.5}" +
+      ".wl-vc-actions{display:flex;gap:10px;margin-top:20px}" +
+      ".wl-vc-btn{flex:1;padding:12px 14px;border:0;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}" +
+      ".wl-vc-btn--primary{background:var(--wl-vc-accent);color:#fff}" +
+      ".wl-vc-btn--ghost{background:#f3f4f6;color:#374151}" +
+      "@media (max-width:600px){.wl-vc-card{grid-template-columns:1fr;max-width:420px;padding:20px;gap:16px}.wl-vc-img{aspect-ratio:16/10}.wl-vc-body{padding-right:0}.wl-vc-title{font-size:17px}.wl-vc-price{font-size:16px}}";
+    document.head.appendChild(s);
+  }
+
+  function closeVariantChooser() {
+    var el = document.getElementById("wl-vc-overlay");
+    if (el) el.remove();
+    document.removeEventListener("keydown", onChooserKey, true);
+  }
+
+  function onChooserKey(e) {
+    if (e.key === "Escape") closeVariantChooser();
+  }
+
+  function openVariantChooser(product, onConfirm) {
+    closeVariantChooser();
+    ensureChooserStyles();
+
+    var options = getProductOptions(product);
+    var start = product.variants[0];
+    for (var i = 0; i < product.variants.length; i++) {
+      if (product.variants[i].available) { start = product.variants[i]; break; }
+    }
+    var sel = options.map(function (o, idx) { return start["option" + (idx + 1)]; });
+    var accent = wlIconSettings.customIconColor || ACTIVE_COLOR;
+
+    var overlay = document.createElement("div");
+    overlay.id = "wl-vc-overlay";
+    overlay.className = "wl-vc-overlay";
+    overlay.style.setProperty("--wl-vc-accent", accent);
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", TEXT_CHOOSE);
+
+    var card = document.createElement("div");
+    card.className = "wl-vc-card";
+    overlay.appendChild(card);
+
+    function render() {
+      var variant = findVariantByOptions(product, sel) || product.variants[0];
+      var imgSrc = (variant.featured_image && variant.featured_image.src) || product.featured_image || "";
+      var html =
+        '<button type="button" class="wl-vc-close" aria-label="' + escHtml(TEXT_CANCEL) + '" data-wl-vc="close">&times;</button>' +
+        '<div class="wl-vc-media">' +
+          (imgSrc ? '<img class="wl-vc-img" src="' + escHtml(imgSrc) + '" alt="">' : '<div class="wl-vc-img"></div>') +
+        '</div>' +
+        '<div class="wl-vc-body">' +
+          '<p class="wl-vc-title">' + escHtml(product.title) + '</p>' +
+          '<div class="wl-vc-price">' + escHtml(formatMoney(variant.price)) + '</div>' +
+          '<div class="wl-vc-note">' + (variant.available ? '' : escHtml(TEXT_SOLDOUT)) + '</div>';
+      for (var o = 0; o < options.length; o++) {
+        html += '<div class="wl-vc-label">' + escHtml(options[o].name) + '</div><div class="wl-vc-chips">';
+        for (var v = 0; v < options[o].values.length; v++) {
+          var val = options[o].values[v];
+          var trial = sel.slice();
+          trial[o] = val;
+          var match = findVariantByOptions(product, trial);
+          var sold = match && !match.available;
+          html += '<button type="button" class="wl-vc-chip' + (sold ? ' wl-vc-soldout' : '') + '" data-wl-vc="opt" data-o="' + o + '" data-v="' + escHtml(val) + '" aria-pressed="' + (sel[o] === val ? 'true' : 'false') + '">' + escHtml(val) + '</button>';
+        }
+        html += '</div>';
+      }
+      html +=
+        '<div class="wl-vc-actions">' +
+          '<button type="button" class="wl-vc-btn wl-vc-btn--ghost" data-wl-vc="close">' + escHtml(TEXT_CANCEL) + '</button>' +
+          '<button type="button" class="wl-vc-btn wl-vc-btn--primary" data-wl-vc="confirm">' + escHtml(TEXT_ADD) + '</button>' +
+        '</div>' +
+        '</div>';
+      card.innerHTML = html;
+    }
+
+    overlay.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var t = e.target;
+      if (t === overlay) { closeVariantChooser(); return; }
+      var actionEl = t.closest ? t.closest("[data-wl-vc]") : null;
+      if (!actionEl) return;
+      var kind = actionEl.getAttribute("data-wl-vc");
+      if (kind === "close") { closeVariantChooser(); return; }
+      if (kind === "opt") {
+        sel[Number(actionEl.getAttribute("data-o"))] = actionEl.getAttribute("data-v");
+        render();
+        return;
+      }
+      if (kind === "confirm") {
+        var chosen = findVariantByOptions(product, sel) || product.variants[0];
+        closeVariantChooser();
+        onConfirm(chosen);
+      }
+    });
+    overlay.addEventListener("mousedown", function (e) { e.stopPropagation(); });
+
+    render();
+    document.body.appendChild(overlay);
+    document.addEventListener("keydown", onChooserKey, true);
+    var firstFocus = card.querySelector(".wl-vc-chip[aria-pressed=true]") || card.querySelector(".wl-vc-btn--primary");
+    if (firstFocus) firstFocus.focus();
+  }
+
+  // ─── Add / remove ──────────────────────────────────────────────────────────
+  function postWishlist(productId, variantId, action) {
+    return fetch(PROXY + "/api/wishlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ shop: SHOP, customerId: CUSTOMER_ID, productId: productId, variantId: variantId, action: action })
+    });
+  }
+
+  function toastForButton(btn, action) {
+    var cardContainer = btn.closest('.product-card-wrapper, .card-wrapper, .grid-product, .product-item, .product-card, .card, .grid__item');
+    var imgEl = cardContainer ? cardContainer.querySelector('img') : null;
+    var titleEl = cardContainer ? cardContainer.querySelector('[class*="card__heading"] a, [class*="card__name"], [class*="product-title"], h3, h2, .card__heading') : null;
+    wlToast(action === "add" ? TEXT_ADDED_TOAST : TEXT_REMOVED_TOAST, action, imgEl ? imgEl.src : null, titleEl ? titleEl.textContent.trim() : null);
+  }
+
+  function toggleWishlist(btn, productId) {
+    if (btn.classList.contains("active")) {
+      removeFromWishlist(btn, productId);
+      return;
+    }
+
+    // Look up the product's variants first: one variant adds straight away,
+    // several open a small popup so the shopper picks the exact one.
+    btn.style.opacity = "0.5";
+    btn.style.pointerEvents = "none";
+    getProductJson(btn.getAttribute("data-wl-handle")).then(function (product) {
+      btn.style.opacity = "";
+      btn.style.pointerEvents = "";
+      var variants = product && product.variants ? product.variants : [];
+      if (variants.length > 1) {
+        openVariantChooser(product, function (variant) { addToWishlist(btn, productId, String(variant.id)); });
+      } else {
+        addToWishlist(btn, productId, variants[0] ? String(variants[0].id) : undefined);
+      }
+    });
+  }
+
+  function addToWishlist(btn, productId, variantId) {
+    btn.classList.add("wl-c-clicked");
+
+    var rp1 = document.createElement("span");
+    rp1.className = "wl-c-ripple";
+    btn.appendChild(rp1);
+    rp1.addEventListener("animationend", function () { rp1.remove(); });
+
+    var rp2 = document.createElement("span");
+    rp2.className = "wl-c-ripple2";
+    btn.appendChild(rp2);
+    rp2.addEventListener("animationend", function () { rp2.remove(); });
+
+    var fh = document.createElement("span");
+    fh.className = "wl-c-float";
+    fh.textContent = "♥";
+    fh.style.color = ACTIVE_COLOR;
+    btn.appendChild(fh);
+    fh.addEventListener("animationend", function () { fh.remove(); });
+
+    setTimeout(function () { btn.classList.remove("wl-c-clicked"); }, 750);
 
     btn.style.opacity = "0.5";
     btn.style.pointerEvents = "none";
 
-    fetch(PROXY + "/api/wishlist", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shop: SHOP, customerId: CUSTOMER_ID, productId: productId, action: action })
-    })
+    postWishlist(productId, variantId, "add")
       .then(function (res) {
         if (res.ok) {
-          if (action === "add") wishlistedIds.add(productId);
-          else wishlistedIds.delete(productId);
-          syncButtons(productId, action === "add");
-          updateHeaderBadge(action === "add" ? 1 : -1);
-          var cardContainer = btn.closest('.product-card-wrapper, .card-wrapper, .grid-product, .product-item, .product-card, .card, .grid__item');
-          var imgEl = cardContainer ? cardContainer.querySelector('img') : null;
-          var titleEl = cardContainer ? cardContainer.querySelector('[class*="card__heading"] a, [class*="card__name"], [class*="product-title"], h3, h2, .card__heading') : null;
-          var imgSrc = imgEl ? imgEl.src : null;
-          var productName = titleEl ? titleEl.textContent.trim() : null;
-          wlToast(action === "add" ? TEXT_ADDED_TOAST : TEXT_REMOVED_TOAST, action, imgSrc, productName);
+          wishlistedIds.add(productId);
+          wishlistRows.push({ productId: productId, variantId: variantId || null });
+          syncButtons(productId, true);
+          updateHeaderBadge(1);
+          toastForButton(btn, "add");
         }
+      })
+      .catch(function () { })
+      .finally(function () {
+        btn.style.opacity = "";
+        btn.style.pointerEvents = "";
+      });
+  }
+
+  // Removing takes out every saved variant of the product, one request each,
+  // so nothing is left behind.
+  function removeFromWishlist(btn, productId) {
+    btn.style.opacity = "0.5";
+    btn.style.pointerEvents = "none";
+
+    var rows = wishlistRows.filter(function (r) { return String(r.productId) === String(productId); });
+    var variantIds = rows.length ? rows.map(function (r) { return r.variantId || null; }) : [undefined];
+
+    Promise.all(variantIds.map(function (vid) { return postWishlist(productId, vid, "remove"); }))
+      .then(function (responses) {
+        var allOk = responses.every(function (r) { return r.ok; });
+        if (!allOk) return;
+        wishlistedIds.delete(productId);
+        wishlistRows = wishlistRows.filter(function (r) { return String(r.productId) !== String(productId); });
+        syncButtons(productId, false);
+        updateHeaderBadge(-variantIds.length);
+        toastForButton(btn, "remove");
       })
       .catch(function () { })
       .finally(function () {
@@ -379,6 +616,7 @@
       .then(function (data) {
         var items = (data.wishlist && data.wishlist.items) || [];
         items.forEach(function (item) { wishlistedIds.add(item.productId); });
+        wishlistRows = items.map(function (item) { return { productId: item.productId, variantId: item.variantId || null }; });
 
         var planActive = data.hasActivePlan !== false;
 
@@ -409,6 +647,8 @@
             if (productId) {
               var isActive = wishlistedIds.has(productId);
               var heart = createHeartButton(productId, isActive);
+              var heartBtn = heart.querySelector('.wl-heart-btn');
+              if (heartBtn) heartBtn.setAttribute('data-wl-handle', card.handle);
               if (!planActive) {
                 var btn = heart.querySelector('.wl-heart-btn');
                 if (btn) {
@@ -442,6 +682,7 @@
         var items = (data.wishlist && data.wishlist.items) || [];
         var freshIds = new Set();
         items.forEach(function (item) { freshIds.add(item.productId); });
+        wishlistRows = items.map(function (item) { return { productId: item.productId, variantId: item.variantId || null }; });
         wishlistedIds = freshIds;
         window.__wlWishlistedIds = wishlistedIds;
 

@@ -654,6 +654,7 @@
               .then(function (sections) {
                 console.log('[wl-debug] sections keys found', sections ? Object.keys(sections) : null);
                 if (!sections) return;
+                var drawerRefreshed = false;
                 var targets = [
                   { key: 'cart-drawer', selector: '#CartDrawer' },
                   { key: 'cart-icon-bubble', selector: '#cart-icon-bubble' },
@@ -668,9 +669,28 @@
                     var freshEl = doc.querySelector(t.selector);
                     var targetEl = document.querySelector(t.selector);
                     console.log('[wl-debug]', t.key, 'freshEl found:', !!freshEl, 'targetEl found on page:', !!targetEl);
-                    if (freshEl && targetEl) targetEl.innerHTML = freshEl.innerHTML;
+                    if (freshEl && targetEl) {
+                      targetEl.innerHTML = freshEl.innerHTML;
+                      if (t.key === 'cart-drawer') drawerRefreshed = true;
+                    }
                   } catch (e) { console.error('[wl-debug] error applying section', t.key, e); }
                 });
+
+                // Dawn-style drawers keep an "is-empty" class from the moment
+                // the page loaded with an empty cart, and their stylesheet
+                // keeps drawing the empty layout even after items are inside.
+                // Once fresh drawer content is in and the cart has items,
+                // clear that leftover state.
+                if (drawerRefreshed) {
+                  try {
+                    var drawerHost = document.querySelector('cart-drawer');
+                    if (drawerHost) {
+                      drawerHost.classList.remove('is-empty');
+                      var staleEmpty = drawerHost.querySelectorAll('.is-empty');
+                      for (var si = 0; si < staleEmpty.length; si++) staleEmpty[si].classList.remove('is-empty');
+                    }
+                  } catch (e) {}
+                }
               })
               .catch(function (e) { console.error('[wl-debug] sections fetch failed', e); });
           } catch (e) { console.error('[wl-debug] refreshCartSections threw', e); }

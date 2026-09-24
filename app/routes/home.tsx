@@ -387,6 +387,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
           <li><span class="pricing-check">&#10003;</span>Heart button on all product pages</li>
           <li><span class="pricing-check">&#10003;</span>Works with any Shopify theme</li>
           <li><span class="pricing-check">&#10003;</span>Easy one-click setup</li>
+          <li><span class="pricing-check">&#10003;</span>Email alerts for price changes</li>
+          <li><span class="pricing-check">&#10003;</span>Email alerts for stock changes</li>
+          <li><span class="pricing-check">&#10003;</span>Custom button configuration</li>
         </ul>
       </div>
 
@@ -408,6 +411,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
           <li><span class="pricing-check">&#10003;</span>Analytics dashboard &amp; top products</li>
           <li><span class="pricing-check">&#10003;</span>Works with any Shopify theme</li>
           <li><span class="pricing-check">&#10003;</span>Easy one-click setup</li>
+          <li><span class="pricing-check">&#10003;</span>Email alerts for price changes</li>
+          <li><span class="pricing-check">&#10003;</span>Email alerts for stock changes</li>
+          <li><span class="pricing-check">&#10003;</span>Custom button configuration</li>
         </ul>
       </div>
 

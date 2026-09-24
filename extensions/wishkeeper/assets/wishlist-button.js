@@ -48,9 +48,7 @@
     }, 4000);
   }
 
-  var wrappers = document.querySelectorAll(".wl-btn-wrapper");
-
-  wrappers.forEach(function (wrapper) {
+  function initWrapper(wrapper) {
     if (wrapper.dataset.initialized) return;
     wrapper.dataset.initialized = "true";
 
@@ -371,7 +369,50 @@
         .catch(function () { setActive(isActive); })
         .finally(function () { btn.classList.remove("loading"); });
     });
-  });
+  }
+
+  // A wrapper pasted where Liquid's `product` isn't available has an empty
+  // product id. Fill it in from the product page's own URL, then set it up.
+  function hydrateWrapper(wrapper) {
+    if (wrapper.dataset.wlHydrating) return;
+    var m = window.location.pathname.match(/\/products\/([a-zA-Z0-9_-]+)/);
+    if (!m) return;
+    wrapper.dataset.wlHydrating = "true";
+    fetch("/products/" + m[1] + ".js")
+      .then(function (r) { return r.json(); })
+      .then(function (p) {
+        wrapper.dataset.productId = String(p.id);
+        if (!wrapper.dataset.variantId) {
+          var fromUrl = new URLSearchParams(window.location.search).get("variant");
+          wrapper.dataset.variantId = String(fromUrl || (p.variants && p.variants[0] && p.variants[0].id) || "");
+        }
+        initWrapper(wrapper);
+      })
+      .catch(function () { wrapper.dataset.wlHydrating = ""; });
+  }
+
+  function initWrappers() {
+    document.querySelectorAll(".wl-btn-wrapper").forEach(function (wrapper) {
+      if (wrapper.dataset.initialized) return;
+      if (wrapper.dataset.productId) initWrapper(wrapper);
+      else hydrateWrapper(wrapper);
+    });
+  }
+
+  initWrappers();
+
+  // Some themes build the product form after page load, so a wrapper can show
+  // up later. Watch for it and set it up when it does.
+  var wrapperScanTimer = null;
+  new MutationObserver(function (mutations) {
+    for (var i = 0; i < mutations.length; i++) {
+      if (mutations[i].addedNodes.length > 0) {
+        clearTimeout(wrapperScanTimer);
+        wrapperScanTimer = setTimeout(initWrappers, 200);
+        return;
+      }
+    }
+  }).observe(document.body, { childList: true, subtree: true });
 })();
 
 

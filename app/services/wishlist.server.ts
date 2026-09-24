@@ -453,10 +453,26 @@ export async function processProductUpdateWebhook(admin: any, shop: string, payl
 
   const prices = variants.map((v: any) => parseFloat(v.price)).filter((p: number) => !isNaN(p));
   const newPrice = prices.length > 0 ? Math.min(...prices) : null;
-  const newInventory = variants.reduce(
+  const payloadInventory = variants.reduce(
     (sum: number, v: any) => sum + (typeof v.inventory_quantity === "number" ? v.inventory_quantity : 0),
     0
   );
+
+  // The webhook's per-variant inventory_quantity can be stale or wrong, so ask
+  // Shopify for the product's real total. Falls back to the payload if that fails.
+  let newInventory = payloadInventory;
+  try {
+    const invRes = await admin.graphql(
+      `query ProductInventory($id: ID!) { product(id: $id) { totalInventory } }`,
+      { variables: { id: `gid://shopify/Product/${productId}` } }
+    );
+    const invJson = await invRes.json();
+    const total = invJson.data?.product?.totalInventory;
+    if (typeof total === "number") newInventory = total;
+    console.log("[alerts] inventory: payload =", payloadInventory, "| Shopify totalInventory =", total);
+  } catch (err) {
+    console.error("[alerts] inventory lookup failed, using webhook payload value:", err);
+  }
 
   const watch = await prisma.productWatch.findUnique({
     where: { storeId_productId: { storeId: store.id, productId } },

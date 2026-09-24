@@ -12,6 +12,9 @@ export const PLANS = {
             "Simple wishlist management",
             "Mobile friendly",
             "Fast access",
+            "Email alerts for price changes",
+            "Email alerts for stock changes",
+            "Custom button configuration",
         ],
     },  
     pro: {
@@ -25,6 +28,9 @@ export const PLANS = {
             "Simple wishlist management",
             "Mobile friendly",
             "Fast access",
+            "Email alerts for price changes",
+            "Email alerts for stock changes",
+            "Custom button configuration",
         ],
     },
 } as const;

@@ -117,6 +117,14 @@
     var customerId = cfg.customerId;
     var customMatcher = null;
 
+    // Remember how to find the merchant's button, so it can be set up right
+    // away on the next page load instead of after the settings request.
+    var MATCHER_KEY = "wl_custom_matcher";
+    try {
+      var cachedMatcher = localStorage.getItem(MATCHER_KEY);
+      if (cachedMatcher) customMatcher = JSON.parse(cachedMatcher);
+    } catch (_) {}
+
     // Apply the last known icon color immediately, so it doesn't flash away
     // while settings are still loading after a page refresh.
     var ICON_COLOR_KEY = "wl_icon_color";
@@ -216,12 +224,28 @@
       var variantId = null;
       var ready = false;
 
+      // Themes often style the saved state on a wrapper around the clicked
+      // element (e.g. `.wishlish-icon.is-active`), not on the element itself,
+      // and may flip that class on every click. We set it from the server's
+      // real state so the two can never drift apart.
+      var stateHost = null;
+      for (var hp = btn.parentElement, hd = 0; hp && hd < 3 && hp !== document.body; hp = hp.parentElement, hd++) {
+        if (/wish|heart|fav/i.test(typeof hp.className === "string" ? hp.className : "")) { stateHost = hp; break; }
+      }
+      var themeStyled = !!stateHost && !/^(button|a)$/i.test(btn.tagName);
+
       // Same behavior as the built-in icon: the settings color shows only
       // while the product is saved, and is removed again when it isn't.
       function paintIcon() {
         var active = btn.classList.contains("active");
         // Many themes style the saved state with their own "is-active" class.
         btn.classList.toggle("is-active", active);
+        if (stateHost) {
+          stateHost.classList.toggle("active", active);
+          stateHost.classList.toggle("is-active", active);
+        }
+        // The wrapper's own CSS draws the icon; nothing more to paint.
+        if (themeStyled) return;
         // An outline + filled icon pair means the merchant's own CSS swaps
         // and colors the icons, so their colors are left untouched.
         if (btn.querySelectorAll("svg").length > 1) return;
@@ -309,6 +333,9 @@
 
       btn.addEventListener("click", function () {
         if (!ready || btn.disabled) {
+          // A theme script may already have flipped its own state on this
+          // click; put it back to what we actually know.
+          setTimeout(paintIcon, 0);
           return;
         }
         var action = isActive ? "remove" : "add";
@@ -359,7 +386,7 @@
             );
           })
           .catch(function (err) { console.error(LOG, "action request errored", err); })
-          .finally(function () { btn.classList.remove("loading"); });
+          .finally(function () { btn.classList.remove("loading"); paintIcon(); });
       });
     }
 
@@ -416,6 +443,14 @@
         }
         if (d.settings && d.settings.customWishlistButtonHtml) {
           customMatcher = deriveMatcher(d.settings.customWishlistButtonHtml);
+        } else if (d.settings) {
+          customMatcher = null;
+        }
+        if (d.settings) {
+          try {
+            if (customMatcher) localStorage.setItem(MATCHER_KEY, JSON.stringify(customMatcher));
+            else localStorage.removeItem(MATCHER_KEY);
+          } catch (_) {}
         }
         if (hasActivePlan === false) {
           findAllMatches().forEach(applyDisabledState);

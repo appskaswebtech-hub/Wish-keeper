@@ -1,5 +1,14 @@
 import prisma from "../db.server";
-import { sendAlertEmail, backInStockTemplate, priceDropTemplate, lowStockTemplate } from "./mailer.server";
+import {
+  sendAlertEmail,
+  backInStockTemplate,
+  priceDropTemplate,
+  priceIncreaseTemplate,
+  lowStockTemplate,
+  formatMoney,
+  type AlertContext,
+  type EmailProduct,
+} from "./mailer.server";
 
 // ─── Store ───────────────────────────────────────────────────────────
 
@@ -441,7 +450,7 @@ export async function processProductUpdateWebhook(admin: any, shop: string, payl
 
   console.log("[alerts] productId:", productId, "newPrice:", newPrice, "newInventory:", newInventory, "previousWatch:", watch);
 
-  const events: Array<"back_in_stock" | "price_drop" | "low_stock"> = [];
+  const events: Array<"back_in_stock" | "price_drop" | "price_increase" | "low_stock"> = [];
   if (watch) {
     if ((watch.lastInventory ?? 0) <= 0 && newInventory > 0) events.push("back_in_stock");
     if (
@@ -452,6 +461,7 @@ export async function processProductUpdateWebhook(admin: any, shop: string, payl
     )
       events.push("low_stock");
     if (newPrice !== null && watch.lastPrice !== null && newPrice < watch.lastPrice) events.push("price_drop");
+    if (newPrice !== null && watch.lastPrice !== null && newPrice > watch.lastPrice) events.push("price_increase");
   }
 
   await prisma.productWatch.upsert({
@@ -488,14 +498,18 @@ export async function processProductUpdateWebhook(admin: any, shop: string, payl
 
   const gids = customerIds.map((id) => `gid://shopify/Customer/${id}`);
   let emailMap: Record<string, string> = {};
+  let nameMap: Record<string, string> = {};
   try {
     const res = await admin.graphql(
-      `query GetCustomerEmails($ids: [ID!]!) { nodes(ids: $ids) { ... on Customer { id email } } }`,
+      `query GetCustomerEmails($ids: [ID!]!) { nodes(ids: $ids) { ... on Customer { id email firstName } } }`,
       { variables: { ids: gids } }
     );
     const json = await res.json();
     for (const node of json.data?.nodes ?? []) {
-      if (node?.id && node.email) emailMap[node.id.replace("gid://shopify/Customer/", "")] = node.email;
+      if (!node?.id) continue;
+      const cid = node.id.replace("gid://shopify/Customer/", "");
+      if (node.email) emailMap[cid] = node.email;
+      if (node.firstName) nameMap[cid] = node.firstName;
     }
   } catch (err) {
     console.error("[alerts] customer email lookup failed:", err);
@@ -504,6 +518,65 @@ export async function processProductUpdateWebhook(admin: any, shop: string, payl
   console.log("[alerts] emailMap:", emailMap, "alreadySent:", [...alreadySent]);
 
   const productUrl = `https://${shop}/products/${payload.handle}`;
+
+  // Up to 3 other saved products per customer, shown under the main product.
+  const otherItems = await prisma.wishlistItem.findMany({
+    where: {
+      productId: { not: productId },
+      wishlist: { storeId: store.id, customerId: { in: customerIds } },
+    },
+    include: { wishlist: true },
+    orderBy: { addedAt: "desc" },
+  });
+  const otherByCustomer: Record<string, string[]> = {};
+  for (const it of otherItems) {
+    const list = (otherByCustomer[it.wishlist.customerId] ??= []);
+    if (list.length < 3 && !list.includes(it.productId)) list.push(it.productId);
+  }
+  const otherPids = [...new Set(Object.values(otherByCustomer).flat())];
+
+  let shopName = shop.replace(".myshopify.com", "");
+  let currency = "USD";
+  const productMap: Record<string, EmailProduct> = {};
+  try {
+    const res = await admin.graphql(
+      `query AlertProducts($ids: [ID!]!) {
+        shop { name currencyCode }
+        nodes(ids: $ids) {
+          ... on Product {
+            id title handle status
+            featuredImage { url }
+            priceRangeV2 { minVariantPrice { amount currencyCode } }
+          }
+        }
+      }`,
+      { variables: { ids: otherPids.map((id) => `gid://shopify/Product/${id}`) } }
+    );
+    const json = await res.json();
+    if (json.data?.shop?.name) shopName = json.data.shop.name;
+    if (json.data?.shop?.currencyCode) currency = json.data.shop.currencyCode;
+    for (const node of json.data?.nodes ?? []) {
+      if (!node?.id || node.status !== "ACTIVE") continue;
+      const pid = node.id.replace("gid://shopify/Product/", "");
+      const money = node.priceRangeV2?.minVariantPrice;
+      productMap[pid] = {
+        title: node.title,
+        url: `https://${shop}/products/${node.handle}`,
+        image: node.featuredImage?.url ?? null,
+        price: money ? formatMoney(parseFloat(money.amount), money.currencyCode) : null,
+      };
+    }
+  } catch (err) {
+    console.error("[alerts] product/shop lookup failed, sending without extras:", err);
+  }
+
+  const mainProduct: EmailProduct = {
+    title: payload.title,
+    url: productUrl,
+    image: payload.image?.src ?? payload.images?.[0]?.src ?? null,
+    price: newPrice !== null ? formatMoney(newPrice, currency) : null,
+  };
+  const oldPriceText = watch?.lastPrice != null ? formatMoney(watch.lastPrice, currency) : undefined;
 
   for (const customerId of customerIds) {
     const email = emailMap[customerId];
@@ -517,10 +590,19 @@ export async function processProductUpdateWebhook(admin: any, shop: string, payl
         continue;
       }
 
+      const ctx: AlertContext = {
+        shopName,
+        customerName: nameMap[customerId] ?? null,
+        product: mainProduct,
+        more: (otherByCustomer[customerId] ?? []).map((pid) => productMap[pid]).filter(Boolean),
+        oldPrice: oldPriceText,
+      };
+
       let template;
-      if (type === "back_in_stock") template = backInStockTemplate(payload.title, productUrl);
-      else if (type === "low_stock") template = lowStockTemplate(payload.title, productUrl);
-      else template = priceDropTemplate(payload.title, productUrl, watch?.lastPrice ?? newPrice ?? 0, newPrice ?? 0, "$");
+      if (type === "back_in_stock") template = backInStockTemplate(ctx);
+      else if (type === "low_stock") template = lowStockTemplate(ctx);
+      else if (type === "price_increase") template = priceIncreaseTemplate(ctx);
+      else template = priceDropTemplate(ctx);
 
       console.log("[alerts] attempting to send", type, "to", email);
       try {

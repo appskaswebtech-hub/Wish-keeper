@@ -11,6 +11,7 @@ import {
   getStoreSettingsByShop,
   clearWishlist,
 } from "../services/wishlist.server";
+import { seedProductWatch } from "../services/productWatch.server";
 import prisma from "../db.server";
 
 const cors = {
@@ -97,6 +98,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           return data({ error: "Missing productId" }, { status: 400, headers: cors });
         }
         const item = await addWishlistItem(store.id, customerId, productId, variantId);
+        seedProductWatch(shop, store.id, String(productId)).catch((err) =>
+          console.error("[alerts] seedProductWatch failed:", err?.message)
+        );
         return data({ success: true, item }, { headers: cors });
       }
       case "remove": {

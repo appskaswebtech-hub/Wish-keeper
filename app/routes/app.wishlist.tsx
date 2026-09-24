@@ -193,11 +193,12 @@ const IconHeart = () => (
   </svg>
 );
 
-function getInitials(customerId: string, isGuest: boolean): string {
-  if (isGuest) return "G";
-  const clean = customerId.replace(/\D/g, "");
-  return clean ? clean.slice(0, 2) : "C";
-}
+const IconBlankAvatar = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" opacity="0.55">
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7z" />
+  </svg>
+);
 
 const IconClose = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -566,8 +567,8 @@ export default function WishlistAdmin() {
             <tbody>
               {wishlists.map((wl: any, index: number) => {
                 const isGuest = wl.customerId.startsWith("guest_");
-                const initials = getInitials(wl.customerId, isGuest);
                 const customer = !isGuest ? (customerMap as any)[wl.customerId] : null;
+                const initial = ((customer?.name || customer?.email || "").trim().charAt(0) || "").toUpperCase();
                 const displayName = isGuest
                   ? t("wishlistsPage.table.guest")
                   : customer?.name || customer?.email || (wl.customerId.length > 22 ? wl.customerId.slice(0, 22) + "…" : wl.customerId);
@@ -588,7 +589,7 @@ export default function WishlistAdmin() {
                     <td style={{ color: "#1a1612", fontWeight: 600, fontSize: 13 }}>{serialNo}</td>
                     <td>
                       <div className="wl-customer">
-                        <div className={`wl-avatar${isGuest ? " wl-avatar--guest" : ""}`}>{initials}</div>
+                        <div className={`wl-avatar${isGuest ? " wl-avatar--guest" : ""}`}>{initial || <IconBlankAvatar />}</div>
                         <div>
                           <div className="wl-customer__name">{displayName}</div>
                           {customer?.email && customer.email !== displayName && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>{customer.email}</div>}

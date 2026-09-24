@@ -623,6 +623,25 @@
     background: var(--gold-bg);
 }
 
+.st-copy-btn {
+    padding: 5px 12px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--cream);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    white-space: nowrap;
+}
+
+.st-copy-btn:hover {
+    border-color: var(--gold-border);
+    color: var(--gold);
+    background: var(--gold-bg);
+}
+
 .st-code-window__textarea {
     display: block;
     width: 100%;

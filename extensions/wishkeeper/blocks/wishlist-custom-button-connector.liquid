@@ -15,6 +15,16 @@
 </script>
 <script src="{{ 'wishlist-custom-button.js' | asset_url }}" defer></script>
 
+{% if template.name == 'product' %}
+  {%- comment -%}
+    Loads the standard Add to Wishlist button's script/styles site-wide on
+    product pages, so a manually pasted button marker (see Settings →
+    "Manual button placement") works even without the theme block added.
+  {%- endcomment -%}
+  <link rel="stylesheet" href="{{ 'wishlist-button.css' | asset_url }}">
+  <script src="{{ 'wishlist-button.js' | asset_url }}" defer></script>
+{% endif %}
+
 {% schema %}
 {
   "name": "Wishlist Btn Connector",

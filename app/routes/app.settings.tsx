@@ -179,7 +179,40 @@ export default function Settings() {
   );
   const [gmailHelpOpen, setGmailHelpOpen] = useState(false);
   const [customHelpOpen, setCustomHelpOpen] = useState(false);
+  const [iconSlotCopied, setIconSlotCopied] = useState(false);
   const customButtonTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const ICON_SLOT_SNIPPET = '<div id="wl-manual-icon-slot"></div>';
+
+  function copyIconSlotSnippet() {
+    navigator.clipboard.writeText(ICON_SLOT_SNIPPET).then(() => {
+      setIconSlotCopied(true);
+      setTimeout(() => setIconSlotCopied(false), 2000);
+    });
+  }
+
+  const [buttonSlotCopied, setButtonSlotCopied] = useState(false);
+  const BUTTON_SLOT_SNIPPET = `<div
+  class="wl-btn-wrapper"
+  data-product-id="{{ product.id }}"
+  data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+  data-customer-id="{{ customer.id | default: '' }}"
+  data-shop="{{ shop.permanent_domain }}"
+  data-proxy-url="{{ shop.url }}/apps/wishlist"
+>
+  <button class="wl-btn wl-btn--full" type="button" aria-label="Add to wishlist">
+    <svg class="wl-btn-svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+    </svg>
+    <span class="wl-btn-text">Add to Wishlist</span>
+  </button>
+</div>`;
+
+  function copyButtonSlotSnippet() {
+    navigator.clipboard.writeText(BUTTON_SLOT_SNIPPET).then(() => {
+      setButtonSlotCopied(true);
+      setTimeout(() => setButtonSlotCopied(false), 2000);
+    });
+  }
 
   useEffect(() => {
     if (window.location.hash === "#custom-wishlist-button-section") {
@@ -330,6 +363,22 @@ export default function Settings() {
             </div>
             <div className="st-card__body">
               <ToggleRow label={t("settings.iconAppearance.showHeaderIcon")} hint={t("settings.iconAppearance.showHeaderIconHint")} checked={form.headerIconEnabled} onChange={(v) => set("headerIconEnabled", v)} />
+              {form.headerIconEnabled && (
+                <div className="st-field" style={{ marginTop: 4 }}>
+                  <label className="st-field__label">{t("settings.iconAppearance.manualPlacementLabel")}</label>
+                  <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 10px" }}>{t("settings.iconAppearance.manualPlacementDesc")}</p>
+                  <div className="st-code-window">
+                    <div className="st-code-window__head">
+                      <span className="st-code-window__label">HTML</span>
+                      <button type="button" className="st-copy-btn" onClick={copyIconSlotSnippet}>
+                        {iconSlotCopied ? t("settings.iconAppearance.copied") : t("settings.iconAppearance.copy")}
+                      </button>
+                    </div>
+                    <textarea className="st-code-window__textarea" readOnly rows={1} value={ICON_SLOT_SNIPPET} onFocus={(e) => e.target.select()} />
+                  </div>
+                  <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>{t("settings.iconAppearance.manualPlacementTip")}</div>
+                </div>
+              )}
               <div className="st-divider" />
               <div className="st-field">
                 <label className="st-field__label">{t("settings.iconAppearance.iconStyle")}</label>
@@ -475,6 +524,30 @@ export default function Settings() {
                   onChange={(e) => set("customWishlistButtonHtml", e.target.value)}
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="st-card" style={{ gridColumn: "1 / -1" }}>
+            <div className="st-card__head">
+              <div className="st-card__head-row">
+                <div className="st-card__icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b8922a" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
+                </div>
+                <h2 className="st-card__title">{t("settings.manualButton.title")}</h2>
+              </div>
+              <p className="st-card__desc">{t("settings.manualButton.desc")}</p>
+            </div>
+            <div className="st-card__body">
+              <div className="st-code-window">
+                <div className="st-code-window__head">
+                  <span className="st-code-window__label">Liquid</span>
+                  <button type="button" className="st-copy-btn" onClick={copyButtonSlotSnippet}>
+                    {buttonSlotCopied ? t("settings.iconAppearance.copied") : t("settings.iconAppearance.copy")}
+                  </button>
+                </div>
+                <textarea className="st-code-window__textarea" readOnly rows={10} value={BUTTON_SLOT_SNIPPET} onFocus={(e) => e.target.select()} />
+              </div>
+              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 6 }}>{t("settings.manualButton.tip")}</div>
             </div>
           </div>
 

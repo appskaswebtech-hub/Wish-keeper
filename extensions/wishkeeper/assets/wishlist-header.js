@@ -193,6 +193,14 @@
       if (disabledByMerchant) return true;
       if (document.getElementById("wl-header-link")) return true;
 
+      var manualSlot = document.getElementById("wl-manual-icon-slot");
+      if (manualSlot) {
+        var manualLink = createLink();
+        if (!manualLink) return true;
+        manualSlot.appendChild(manualLink);
+        return true;
+      }
+
       var selectors = [
         "header-actions",
         ".header__column--right",

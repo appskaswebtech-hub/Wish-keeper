@@ -14,7 +14,6 @@
   data-customer-id="{{ customer.id | default: '' }}"
   data-shop="{{ shop.permanent_domain }}"
   data-proxy-url="{{ shop.url }}/apps/wishlist"
-  style="--wl-active: {{ block.settings.active_color }};"
 >
   {% if block.settings.button_style == "icon_only" %}
     <button class="wl-btn wl-btn--icon" aria-label="Add to wishlist" type="button">
@@ -41,12 +40,6 @@
   "name": "Wishlist Button",
   "target": "section",
   "settings": [
-    {
-      "type": "color",
-      "id": "active_color",
-      "label": "Active color",
-      "default": "#e74c6f"
-    },
     {
       "type": "select",
       "id": "button_style",

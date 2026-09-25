@@ -32,7 +32,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const activePlanKey = getActivePlanKey(subscription);
   const settings = await getStoreSettingsByShop(session.shop);
   const language = resolveLanguage(settings?.language, getSessionLocale(session));
-  return data({ subscription, activePlanKey, shop: session.shop, plans: PLANS, language });
+  const isDevStore = (subscription as { isDevStore?: boolean } | null)?.isDevStore === true;
+  return data({ subscription, activePlanKey, isDevStore, shop: session.shop, plans: PLANS, language });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -82,7 +83,7 @@ const IconCalendar = () => (
 );
 
 export default function BillingPage() {
-  const { subscription, activePlanKey, plans, language } = useLoaderData<typeof loader>();
+  const { subscription, activePlanKey, isDevStore, plans, language } = useLoaderData<typeof loader>();
   const actionData = useActionData<{ confirmationUrl?: string; success?: boolean }>();
   const submit = useSubmit();
   const navigate = useNavigate();
@@ -145,7 +146,38 @@ export default function BillingPage() {
           </div>
         )}
 
-        <div className="bl-plans-grid" style={{ gridTemplateColumns: "minmax(0, 460px)", justifyContent: "center" }}>
+        <div className="bl-plans-grid">
+          <div className={["bl-plan-card", isDevStore ? "bl-plan-card--active" : ""].join(" ")}>
+            <div className="bl-plan-card__popular">{t("billing.devOnlyBadge")}</div>
+            <div className="bl-plan-card__head">
+              <h2 className="bl-plan-card__name">{t("billing.freeName")}</h2>
+              <div className="bl-plan-card__price-row">
+                <span className="bl-plan-card__currency">$</span>
+                <span className="bl-plan-card__price">0</span>
+                <span className="bl-plan-card__period">{t("billing.perMonth")}</span>
+              </div>
+            </div>
+            <div className="bl-plan-card__body">
+              <div>
+                <div className="bl-plan-card__features-label">{t("billing.featuresIncluded")}</div>
+                <ul className="bl-plan-card__features">
+                  {proFeatures.map((f: string) => (
+                    <li key={f} className="bl-plan-card__feature">
+                      <span className="bl-plan-card__feature-check bl-plan-card__feature-check--gold"><IconCheck size={8} /></span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="bl-plan-card__footer">
+              <div className="bl-plan-card__divider" />
+              <button className={`bl-btn ${isDevStore ? "bl-btn--current" : "bl-btn--outline"}`} disabled>
+                {isDevStore ? <><IconCheck size={11} /> {t("billing.currentPlan")}</> : t("billing.devOnlyButton")}
+              </button>
+            </div>
+          </div>
+
           {(Object.keys(plans) as PlanKey[]).map((planKey) => {
             const plan = plans[planKey];
             const isActive = activePlanKey === planKey;

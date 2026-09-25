@@ -132,9 +132,11 @@ export function getTrialDaysRemaining(
 
 export function getActivePlanKey(
     subscription: Awaited<ReturnType<typeof getActiveSubscription>>
-): PlanKey | null {
+): PlanKey | "free" | null {
     if (!subscription) return null;
-    // Single plan now: every active subscription (including legacy Basic) is "pro".
+    // Development stores run on the free plan (no Shopify subscription behind it).
+    if ((subscription as { isDevStore?: boolean }).isDevStore) return "free";
+    // Single paid plan now: every active subscription (including legacy Basic) is "pro".
     return "pro";
 }
 

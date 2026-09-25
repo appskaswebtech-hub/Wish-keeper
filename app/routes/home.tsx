@@ -369,7 +369,31 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
     <div class="section-eyebrow">Pricing</div>
     <h2 class="section-title">Simple, transparent <em>pricing</em></h2>
     <p class="section-sub">Try it free for 7 days, cancel anytime, no strings attached.</p>
-    <div class="pricing-grid" style="grid-template-columns:1fr;max-width:440px">
+    <div class="pricing-grid">
+
+      <div class="pricing-card">
+        <div class="pricing-popular">Only for development stores</div>
+        <div class="pricing-card__head">
+          <div class="pricing-label">Free</div>
+          <div class="pricing-price-row">
+            <span class="pricing-currency">$</span>
+            <span class="pricing-amount">0</span>
+            <span class="pricing-period">/ month</span>
+          </div>
+          <div class="pricing-trial">Development stores only</div>
+        </div>
+        <ul class="pricing-features">
+          <li><span class="pricing-check">&#10003;</span>Unlimited saved items per customer</li>
+          <li><span class="pricing-check">&#10003;</span>Wishlist page for your customers</li>
+          <li><span class="pricing-check">&#10003;</span>Heart button on all product pages</li>
+          <li><span class="pricing-check">&#10003;</span>Analytics dashboard &amp; top products</li>
+          <li><span class="pricing-check">&#10003;</span>Works with any Shopify theme</li>
+          <li><span class="pricing-check">&#10003;</span>Easy one-click setup</li>
+          <li><span class="pricing-check">&#10003;</span>Email alerts for price changes</li>
+          <li><span class="pricing-check">&#10003;</span>Email alerts for stock changes</li>
+          <li><span class="pricing-check">&#10003;</span>Custom button configuration</li>
+        </ul>
+      </div>
 
       <div class="pricing-card pricing-card--pro">
         <div class="pricing-card__head">

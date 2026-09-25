@@ -1,11 +1,13 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 
-// The app name in the Shopify admin sidebar opens the app root. Always send it to the
-// Overview page (keeping the shop/host params); with no params, /app shows the login form.
+// Opened from the Shopify admin (app name in the sidebar): carries shop/host params, so go
+// to the Overview page. A plain visit to the site root shows the public landing page.
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const qs = new URL(request.url).searchParams.toString();
-  throw redirect(qs ? `/app?${qs}` : "/app");
+  const params = new URL(request.url).searchParams;
+  const fromShopify = params.has("shop") || params.has("host") || params.has("embedded");
+  if (fromShopify) throw redirect(`/app?${params.toString()}`);
+  throw redirect("/home");
 };
 
 export default function Index() {

@@ -11,6 +11,19 @@ const en: Dict = {
     reports: "Reports",
     settings: "Settings",
     billing: "Billing",
+    setupVideo: "Setup video",
+  },
+  welcome: {
+    titleBar: "Welcome to WishKeeper",
+    eyebrow: "Getting started",
+    headingPrefix: "Set up WishKeeper in",
+    headingEmphasis: "a few minutes",
+    headingSuffix: "",
+    heading: "Set up WishKeeper in a few minutes",
+    sub: "Watch this short video to see how to turn on the app embed, add the wishlist blocks and go live.",
+    steps: ["Turn on the WishKeeper app embed in your theme", "Add the wishlist icon and page blocks where you want them", "Choose your icon, colours and options in Settings", "Test by saving a product as a customer"],
+    continue: "Continue to dashboard",
+    readGuide: "Read the written guide",
   },
   common: {
     subscribeModal: {
@@ -432,6 +445,19 @@ const de: Dict = {
     reports: "Berichte",
     settings: "Einstellungen",
     billing: "Abrechnung",
+    setupVideo: "Einrichtungsvideo",
+  },
+  welcome: {
+    titleBar: "Willkommen bei WishKeeper",
+    eyebrow: "Erste Schritte",
+    headingPrefix: "WishKeeper in",
+    headingEmphasis: "wenigen Minuten",
+    headingSuffix: "einrichten",
+    heading: "WishKeeper in wenigen Minuten einrichten",
+    sub: "Sehen Sie sich dieses kurze Video an: So aktivieren Sie das App-Embed, fügen die Wunschlisten-Blöcke hinzu und gehen live.",
+    steps: ["Aktivieren Sie das WishKeeper-App-Embed in Ihrem Theme","Fügen Sie das Wunschlisten-Symbol und die Seitenblöcke dort ein, wo Sie sie möchten","Wählen Sie Symbol, Farben und Optionen in den Einstellungen","Testen Sie, indem Sie als Kunde ein Produkt speichern"],
+    continue: "Weiter zum Dashboard",
+    readGuide: "Schriftliche Anleitung lesen",
   },
   common: {
     subscribeModal: {
@@ -853,6 +879,19 @@ const es: Dict = {
     reports: "Informes",
     settings: "Configuración",
     billing: "Facturación",
+    setupVideo: "Video de configuración",
+  },
+  welcome: {
+    titleBar: "Bienvenido a WishKeeper",
+    eyebrow: "Primeros pasos",
+    headingPrefix: "Configura WishKeeper en",
+    headingEmphasis: "unos minutos",
+    headingSuffix: "",
+    heading: "Configura WishKeeper en unos minutos",
+    sub: "Mira este breve video para ver cómo activar el embed de la app, añadir los bloques de la lista de deseos y publicar.",
+    steps: ["Activa el embed de WishKeeper en tu tema","Añade el icono de la lista de deseos y los bloques de página donde quieras","Elige tu icono, colores y opciones en Ajustes","Prueba guardando un producto como cliente"],
+    continue: "Continuar al panel",
+    readGuide: "Leer la guía escrita",
   },
   common: {
     subscribeModal: {
@@ -1274,6 +1313,19 @@ const fr: Dict = {
     reports: "Rapports",
     settings: "Paramètres",
     billing: "Facturation",
+    setupVideo: "Vidéo de configuration",
+  },
+  welcome: {
+    titleBar: "Bienvenue dans WishKeeper",
+    eyebrow: "Pour commencer",
+    headingPrefix: "Configurez WishKeeper en",
+    headingEmphasis: "quelques minutes",
+    headingSuffix: "",
+    heading: "Configurez WishKeeper en quelques minutes",
+    sub: "Regardez cette courte vidéo pour voir comment activer l'embed de l'application, ajouter les blocs de liste de souhaits et passer en ligne.",
+    steps: ["Activez l'embed WishKeeper dans votre thème","Ajoutez l'icône de liste de souhaits et les blocs de page où vous le souhaitez","Choisissez votre icône, vos couleurs et vos options dans les Paramètres","Testez en enregistrant un produit en tant que client"],
+    continue: "Continuer vers le tableau de bord",
+    readGuide: "Lire le guide écrit",
   },
   common: {
     subscribeModal: {
@@ -1695,6 +1747,19 @@ const it: Dict = {
     reports: "Report",
     settings: "Impostazioni",
     billing: "Fatturazione",
+    setupVideo: "Video di configurazione",
+  },
+  welcome: {
+    titleBar: "Benvenuto in WishKeeper",
+    eyebrow: "Per iniziare",
+    headingPrefix: "Configura WishKeeper in",
+    headingEmphasis: "pochi minuti",
+    headingSuffix: "",
+    heading: "Configura WishKeeper in pochi minuti",
+    sub: "Guarda questo breve video per vedere come attivare l'embed dell'app, aggiungere i blocchi della lista dei desideri e andare online.",
+    steps: ["Attiva l'embed di WishKeeper nel tuo tema","Aggiungi l'icona della lista dei desideri e i blocchi pagina dove preferisci","Scegli icona, colori e opzioni nelle Impostazioni","Prova salvando un prodotto come cliente"],
+    continue: "Continua alla dashboard",
+    readGuide: "Leggi la guida scritta",
   },
   common: {
     subscribeModal: {

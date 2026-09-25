@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
@@ -15,10 +15,12 @@ import dashboardStyles from "../styles/dashboard.css?url";
 export const links = () => [{ rel: "stylesheet", href: dashboardStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin, session } = await authenticate.admin(request);
+  const { admin, session, redirect } = await authenticate.admin(request);
   const store = await findOrCreateStore(session.shop, session.accessToken!);
   const subscription = await getActiveSubscription(admin);
   const hasActivePlan = !!subscription;
+  // Live store without a plan: land straight on Billing (other pages show the subscribe popup).
+  if (!hasActivePlan) return redirect("/app/billing");
   const settings = await getStoreSettings(store.id);
   const language = resolveLanguage(settings?.language, getSessionLocale(session));
   const appEmbedEnabled = await isWishlistIconEmbedEnabled(admin);
@@ -94,6 +96,12 @@ function BillingModal({ open, onNavigate, t, features }: { open: boolean; onNavi
 export default function Analytics() {
   const { hasActivePlan, language, shop, appEmbedEnabled } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  // First visit after install: show the setup video once.
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem("wishkeeper_welcome_seen")) navigate("/app/welcome", { replace: true });
+    } catch { /* storage unavailable */ }
+  }, [navigate]);
   const [modalOpen, setModalOpen] = useState(!hasActivePlan);
   const t = getTranslator(language);
   const subscribeFeatures = getTranslatedList(language, "common.subscribeModal.features");

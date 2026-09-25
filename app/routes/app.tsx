@@ -27,6 +27,7 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app">{t("nav.overview")}</s-link>
+        <s-link href="/app/welcome">{t("nav.setupVideo")}</s-link>
         <s-link href="/app/home">{t("nav.home")}</s-link>
         <s-link href="/app/wishlist">{t("nav.wishlists")}</s-link>
         <s-link href="/app/reports">{t("nav.reports")}</s-link>

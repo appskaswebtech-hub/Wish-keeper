@@ -164,19 +164,10 @@ export async function getWishlistCount(storeId: string, customerId: string) {
   return prisma.wishlistItem.count({ where: { wishlistId: wishlist.id } });
 }
 
-// The Basic plan advertises "Save up to 10 wishlist items" (see PLANS in
-// billing.server.ts); Pro is unlimited. This enforces that cap server-side,
-// independent of the merchant's own maxItemsPerList setting, which only
-// ever raised or lowered the limit within whatever plan they're on.
-const BASIC_PLAN_ITEM_LIMIT = 10;
-
-async function getPlanItemLimit(storeId: string): Promise<number | null> {
-  const store = await prisma.store.findUnique({ where: { id: storeId } });
-  if (!store) return BASIC_PLAN_ITEM_LIMIT;
-
-  const shopPlan = await prisma.shopPlan.findUnique({ where: { shop: store.shop } });
-  if (shopPlan?.plan === "pro" && shopPlan.status === "active") return null;
-  return BASIC_PLAN_ITEM_LIMIT;
+// There is a single plan now and it has no item cap; each store's own
+// maxItemsPerList setting is the only limit.
+async function getPlanItemLimit(_storeId: string): Promise<number | null> {
+  return null;
 }
 
 export async function addWishlistItem(

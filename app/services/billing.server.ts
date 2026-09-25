@@ -1,26 +1,10 @@
 import type { AdminApiContext } from "@shopify/shopify-app-react-router/server";
 
 export const PLANS = {
-    basic: {
-        name: "basic",
-        displayName: "Basic Plan",
-        price: 9.99,
-        interval: "EVERY_30_DAYS" as const,
-        trialDays: 7,
-        features: [
-            "Save up to 10 wishlist items",
-            "Simple wishlist management",
-            "Mobile friendly",
-            "Fast access",
-            "Email alerts for price changes",
-            "Email alerts for stock changes",
-            "Custom button configuration",
-        ],
-    },  
     pro: {
         name: "pro",
         displayName: "Pro Plan",
-        price: 14.99,
+        price: 9.99,
         interval: "EVERY_30_DAYS" as const,
         trialDays: 7,
         features: [
@@ -93,11 +77,43 @@ const SUBSCRIPTION_CANCEL = `
   }
 `;
 
+const SHOP_PLAN_QUERY = `
+  query {
+    shop { plan { partnerDevelopment } }
+  }
+`;
+
+// Partner development stores (demo/test stores) use the app free with full
+// Pro features. Only real (live) stores have to subscribe.
+async function isDevelopmentStore(admin: AdminApiContext): Promise<boolean> {
+    try {
+        const response = await admin.graphql(SHOP_PLAN_QUERY);
+        const data = await response.json();
+        return data?.data?.shop?.plan?.partnerDevelopment === true;
+    } catch {
+        return false;
+    }
+}
+
 export async function getActiveSubscription(admin: AdminApiContext) {
     const response = await admin.graphql(ACTIVE_SUBSCRIPTION_QUERY);
     const data = await response.json();
     const subs = data?.data?.currentAppInstallation?.activeSubscriptions ?? [];
-    return subs[0] ?? null;
+    if (subs[0]) return subs[0];
+
+    if (await isDevelopmentStore(admin)) {
+        return {
+            id: null as string | null,
+            name: "pro",
+            status: "ACTIVE",
+            createdAt: null as string | null,
+            currentPeriodEnd: null as string | null,
+            trialDays: 0,
+            isDevStore: true,
+            lineItems: [] as any[],
+        };
+    }
+    return null;
 }
 
 // Days left until this subscription's free trial converts to a paid charge.
@@ -118,9 +134,8 @@ export function getActivePlanKey(
     subscription: Awaited<ReturnType<typeof getActiveSubscription>>
 ): PlanKey | null {
     if (!subscription) return null;
-    const name = subscription.name?.toLowerCase() ?? "";
-   if (name.includes("pro")) return "pro";
-return "basic";
+    // Single plan now: every active subscription (including legacy Basic) is "pro".
+    return "pro";
 }
 
 export async function createSubscription(

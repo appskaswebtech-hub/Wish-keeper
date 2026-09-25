@@ -49,10 +49,10 @@ export async function updateShopPlan(
 // button even though the admin correctly shows an active plan.
 export async function syncShopPlanFromSubscription(
     shop: string,
-    subscription: { id: string; name?: string | null } | null
+    subscription: { id: string | null; name?: string | null } | null
 ) {
     if (subscription) {
-        const planKey = subscription.name?.toLowerCase().includes("pro") ? "pro" : "basic";
+        const planKey = "pro";
         return updateShopPlan(shop, planKey, subscription.id);
     }
     return updateShopPlan(shop, "none", null);

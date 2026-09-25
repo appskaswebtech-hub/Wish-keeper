@@ -10,7 +10,7 @@
     <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <title>Setup Guide – WishKeeper</title>
+    <title>Setup Guide | WishKeeper</title>
     <meta name="description" content="Step-by-step instructions to install and set up WishKeeper on your Shopify store. No coding required."/>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
@@ -220,6 +220,16 @@
         <div class="prog-line"></div>
         <a href="#step7" class="prog-step">
           <div class="prog-dot">7</div>
+          <span class="prog-label">Email Alerts</span>
+        </a>
+        <div class="prog-line"></div>
+        <a href="#step8" class="prog-step">
+          <div class="prog-dot">8</div>
+          <span class="prog-label">Custom Placement</span>
+        </a>
+        <div class="prog-line"></div>
+        <a href="#step9" class="prog-step">
+          <div class="prog-dot">9</div>
           <span class="prog-label">Test it</span>
         </a>
       </div>
@@ -386,7 +396,7 @@
           <span class="step-chevron">&#8964;</span>
         </div>
         <div class="step-body hidden">
-          <p class="step-intro">This adds a small heart icon on top of each product card in your collection pages so customers can wishlist items without even visiting the product page.</p>
+          <p class="step-intro">This adds a small heart icon on top of each product card in your collection pages so customers can wishlist items without even visiting the product page. If a product has more than one variant (for example a size or a colour), the heart opens a small popup where the customer picks the exact variant before it is saved. Products with a single variant are saved instantly.</p>
           <ul class="instruction-list">
             <li>
               <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
@@ -516,6 +526,18 @@
               <div class="instr-text"><strong>Language</strong>: Select the language for all WishKeeper text visible to customers (button labels, empty state messages, etc.).</div>
             </li>
             <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg></div>
+              <div class="instr-text"><strong>Wishlist opens as</strong>: Choose <strong>Full Page</strong> to send customers to a dedicated wishlist page, or <strong>Popup Drawer</strong> to slide the wishlist over whatever page they are on.</div>
+            </li>
+            <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+              <div class="instr-text"><strong>Grid columns</strong>: When the wishlist opens as a Full Page, choose how many products sit side by side (2 to 10). The layout still adapts automatically on tablets and phones.</div>
+            </li>
+            <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div>
+              <div class="instr-text"><strong>Custom icon and colour</strong>: Upload your own SVG icon and pick its colour. The icon takes that colour only while a product is saved, and returns to normal when it is removed.</div>
+            </li>
+            <li>
               <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v14a2 2 0 0 1-2 2z"/></svg></div>
               <div class="instr-text"><strong>Click "Save Settings"</strong> when done. Changes go live on your store immediately.</div>
             </li>
@@ -523,10 +545,76 @@
         </div>
       </div>
 
-      <!-- Step 7 -->
+      <!-- Step 7: Email alerts -->
       <div class="step-card" id="step7">
         <div class="step-header" onclick="toggleStep(this)">
           <div class="step-num-badge"><span>7</span></div>
+          <div class="step-title-wrap">
+            <div class="step-title">Set up email alerts</div>
+            <div class="step-subtitle">Bring shoppers back when a price or stock level changes</div>
+          </div>
+          <span class="step-chevron">&#8964;</span>
+        </div>
+        <div class="step-body hidden">
+          <p class="step-intro">WishKeeper can email a customer when something they saved changes. Every email shows the product with its image and price, plus a few other items from that customer's wishlist. Alerts go only to customers who are logged in, because guests have no email address.</p>
+          <ul class="instruction-list">
+            <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></div>
+              <div class="instr-text"><strong>Go to Apps &rarr; WishKeeper &rarr; Settings</strong>, find the <strong>Email Alerts</strong> card, and switch on <strong>Enable email alerts</strong>.</div>
+            </li>
+            <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+              <div class="instr-text"><strong>Price changes</strong>: customers get an email when a saved product gets cheaper, and another when its price goes up.</div>
+            </li>
+            <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+              <div class="instr-text"><strong>Stock changes</strong>: set the <strong>Low stock threshold</strong>, and customers are told when a saved product falls to that number of units or fewer. If a product was out of stock when it was saved, they are told when it is back in stock.</div>
+            </li>
+            <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+              <div class="instr-text"><strong>Sender email</strong>: leave it on <strong>WishKeeper Default</strong> for no setup, or send from your own Gmail or custom domain address if you prefer.</div>
+            </li>
+          </ul>
+          <div class="tip-box">
+            <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <p class="tip-text"><strong>Good to know:</strong> a customer gets at most one email of each type per product every 24 hours, so nobody is flooded. To test, log in as a customer, save a product, then change its price or stock in your Shopify admin.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 8: Custom placement -->
+      <div class="step-card" id="step8">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num-badge"><span>8</span></div>
+          <div class="step-title-wrap">
+            <div class="step-title">Place the icon or button exactly where you want <span style="font-size:12px;background:var(--gold-pale);color:var(--gold);border:1px solid rgba(184,146,42,.25);border-radius:100px;padding:2px 10px;vertical-align:middle;font-weight:500">Optional</span></div>
+            <div class="step-subtitle">Use your own theme code, or your own button</div>
+          </div>
+          <span class="step-chevron">&#8964;</span>
+        </div>
+        <div class="step-body hidden">
+          <p class="step-intro">Every theme is built differently. If the wishlist icon or button does not land where you want it, you can place it yourself with a small piece of code copied from the WishKeeper Settings page.</p>
+          <ul class="instruction-list">
+            <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><path d="M12 21C12 21 3 14.5 3 8.5C3 5.42 5.42 3 8.5 3C10.24 3 11.91 3.81 13 5.08C14.09 3.81 15.76 3 17.5 3C20.58 3 23 5.42 23 8.5C23 14.5 12 21 12 21Z"/></svg></div>
+              <div class="instr-text"><strong>Header icon</strong>: in Settings &rarr; Icon &amp; Appearance, open <strong>Manual icon placement</strong> and click <strong>Copy</strong>. In the theme editor, add a <strong>Custom Liquid</strong> block where you want the icon and paste the code in. The icon, with its counter, appears exactly there.</div>
+            </li>
+            <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg></div>
+              <div class="instr-text"><strong>Add to Wishlist button</strong>: in Settings, open <strong>Add to Wishlist Button (Manual Placement)</strong> and click <strong>Copy</strong>. On a product page in the theme editor, add a <strong>Custom Liquid</strong> block where you want the button and paste the code. Make sure the <strong>Wishlist Btn Connector</strong> app embed is switched on under App embeds.</div>
+            </li>
+            <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v14a2 2 0 0 1-2 2z"/></svg></div>
+              <div class="instr-text"><strong>Your own button</strong>: if your theme already has a wishlist button, paste its HTML into <strong>Custom Wishlist Button</strong> in Settings (right-click your button on the store, choose Inspect, then copy the element's HTML). WishKeeper connects to it automatically, with the Wishlist Btn Connector embed switched on. An optional icon CSS snippet is included there to give your button a heart that takes your chosen colour while a product is saved.</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Step 9 -->
+      <div class="step-card" id="step9">
+        <div class="step-header" onclick="toggleStep(this)">
+          <div class="step-num-badge"><span>9</span></div>
           <div class="step-title-wrap">
             <div class="step-title">Test everything is working</div>
             <div class="step-subtitle">A quick check before your customers start using it</div>
@@ -550,7 +638,11 @@
             </li>
             <li>
               <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div>
-              <div class="instr-text"><strong>Click "Add to Cart"</strong> from the wishlist page to confirm the full flow works end to end.</div>
+              <div class="instr-text"><strong>Click "Add to Cart"</strong> from the wishlist page to confirm the full flow works end to end. Your cart drawer should open and show the item straight away.</div>
+            </li>
+            <li>
+              <div class="instr-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b8922a" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
+              <div class="instr-text"><strong>If you enabled collection hearts</strong>, open a collection page and click the heart on a product that has sizes or colours. A popup should ask which one to save.</div>
             </li>
           </ul>
           <div class="tip-box">
@@ -598,6 +690,22 @@
       <div class="faq-item">
         <div class="faq-q">How do I see which products customers are wishlisting?</div>
         <div class="faq-a">Go to Apps &rarr; WishKeeper &rarr; Dashboard. You'll see total wishlist items, active wishlists, unique customers, and your top wishlisted products. The Wishlists tab shows individual customer wishlists.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can customers save a specific size or colour?</div>
+        <div class="faq-a">Yes. Each variant is saved as its own wishlist entry. On a product page the heart follows the variant the customer has selected. On a collection page, the heart opens a small popup to choose the exact variant first. The wishlist page then shows each saved variant with its own price and image.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">When do customers receive emails?</div>
+        <div class="faq-a">When email alerts are switched on in Settings, logged-in customers are emailed if a saved product's price goes down or up, if its stock falls to your low stock threshold, or if it comes back in stock. Each customer gets at most one email of each type per product every 24 hours.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Do email alerts work for guests?</div>
+        <div class="faq-a">No. Guests are not logged in, so we have no email address for them. Alerts go to customers who are logged in to their store account.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can I use my own wishlist button or place the icon somewhere specific?</div>
+        <div class="faq-a">Yes. In Settings you can paste the HTML of your existing button under Custom Wishlist Button, or copy a ready-made snippet for the header icon or the Add to Wishlist button and paste it into a Custom Liquid block wherever you like. See step 8 above.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q">Can I cancel my plan at any time?</div>

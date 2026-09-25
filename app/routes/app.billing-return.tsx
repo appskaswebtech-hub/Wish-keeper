@@ -40,7 +40,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     );
 
     if (activeSub) {
-      const planKey = activeSub.name.toLowerCase().includes("pro") ? "pro" : "basic";
+      const planKey = "pro";
       const label = planKey === "pro" ? "Pro Plan" : "Basic Plan";
       await updateShopPlan(shop, planKey, activeSub.id);
       return { ok: true, plan: { key: planKey, label } } satisfies LoaderData;

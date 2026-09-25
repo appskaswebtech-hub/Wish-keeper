@@ -197,7 +197,7 @@ const en: Dict = {
       },
       step2: {
         title: "Add the Wishlist Button to product pages",
-        desc: "In the theme editor, open any Product page, click Add block, and select WishKeeper – Wishlist Button. Save your theme. Customers can now save products directly from product pages.",
+        desc: "In the theme editor, open any Product page, click Add block, and select WishKeeper: Wishlist Button. Save your theme. Customers can now save products directly from product pages.",
       },
       step3: {
         title: "How customers access their wishlist",
@@ -248,7 +248,7 @@ const en: Dict = {
     },
     customButton: {
       title: "Custom Wishlist Button",
-      desc: "Already have your own \"Add to Wishlist\" button in your theme? Paste its HTML and we'll wire it up automatically — no code editing needed.",
+      desc: "Already have your own \"Add to Wishlist\" button in your theme? Paste its HTML and we'll wire it up automatically, with no code editing needed.",
       htmlLabel: "Button HTML",
       tip: "Tip: on your storefront, right-click your existing wishlist button, choose \"Inspect\", then copy and paste that element's HTML here.",
       iconCssLabel: "Icon CSS (optional)",
@@ -256,7 +256,7 @@ const en: Dict = {
     },
     manualButton: {
       title: "Add to Wishlist Button (Manual Placement)",
-      desc: "Don't have your own wishlist button yet? Copy this ready-made one and paste it into a \"Custom Liquid\" block anywhere on your product page — it works instantly, fully styled and wired up.",
+      desc: "Don't have your own wishlist button yet? Copy this ready-made one and paste it into a \"Custom Liquid\" block anywhere on your product page. It works instantly, fully styled and wired up.",
       tip: "Tip: in the theme editor, open a product page, add a \"Custom Liquid\" block wherever you want the button, then paste this code in.",
     },
     emailAlerts: {
@@ -469,7 +469,7 @@ const de: Dict = {
     engagementCallout: {
       up: "{n} Speicherungen diese Woche, {pct}% mehr als letzte Woche mit {prev}.",
       down: "{n} Speicherungen diese Woche, {pct}% weniger als letzte Woche mit {prev}.",
-      empty: "Noch keine Speicherungen diese oder letzte Woche — sobald Käufer Produkte herzen, erscheint hier Ihr Wochentrend.",
+      empty: "Noch keine Speicherungen diese oder letzte Woche. Sobald Käufer Produkte herzen, erscheint hier Ihr Wochentrend.",
     },
     stats2: {
       totalItems: "Wunschlisten-Artikel insgesamt",
@@ -618,7 +618,7 @@ const de: Dict = {
       },
       step2: {
         title: "Wunschlisten-Button zu Produktseiten hinzufügen",
-        desc: "Öffnen Sie im Theme-Editor eine beliebige Produktseite, klicken Sie auf Block hinzufügen und wählen Sie WishKeeper – Wunschlisten-Button. Speichern Sie Ihr Theme. Kunden können Produkte jetzt direkt von Produktseiten aus speichern.",
+        desc: "Öffnen Sie im Theme-Editor eine beliebige Produktseite, klicken Sie auf Block hinzufügen und wählen Sie WishKeeper: Wunschlisten-Button. Speichern Sie Ihr Theme. Kunden können Produkte jetzt direkt von Produktseiten aus speichern.",
       },
       step3: {
         title: "So greifen Kunden auf ihre Wunschliste zu",
@@ -669,7 +669,7 @@ const de: Dict = {
     },
     customButton: {
       title: "Eigener Wunschlisten-Button",
-      desc: "Haben Sie bereits einen eigenen \"Zur Wunschliste hinzufügen\"-Button in Ihrem Theme? Fügen Sie dessen HTML ein, wir verbinden ihn automatisch — keine Code-Bearbeitung nötig.",
+      desc: "Haben Sie bereits einen eigenen \"Zur Wunschliste hinzufügen\"-Button in Ihrem Theme? Fügen Sie dessen HTML ein, wir verbinden ihn automatisch, ohne Code-Bearbeitung.",
       htmlLabel: "Button-HTML",
       tip: "Tipp: Klicken Sie im Shop mit der rechten Maustaste auf Ihren vorhandenen Wunschlisten-Button, wählen Sie \"Untersuchen\" und fügen Sie das HTML des Elements hier ein.",
       iconCssLabel: "Symbol-CSS (optional)",
@@ -677,7 +677,7 @@ const de: Dict = {
     },
     manualButton: {
       title: "Zur-Wunschliste-Button (Manuelle Platzierung)",
-      desc: "Sie haben noch keinen eigenen Wunschlisten-Button? Kopieren Sie diesen fertigen Button und fügen Sie ihn in einen \"Custom Liquid\"-Block auf Ihrer Produktseite ein — er funktioniert sofort, vollständig gestaltet und verknüpft.",
+      desc: "Sie haben noch keinen eigenen Wunschlisten-Button? Kopieren Sie diesen fertigen Button und fügen Sie ihn in einen \"Custom Liquid\"-Block auf Ihrer Produktseite ein. Er funktioniert sofort, vollständig gestaltet und verknüpft.",
       tip: "Tipp: Öffnen Sie im Theme-Editor eine Produktseite, fügen Sie einen \"Custom Liquid\"-Block an gewünschter Stelle hinzu und fügen Sie diesen Code dort ein.",
     },
     emailAlerts: {
@@ -1039,7 +1039,7 @@ const es: Dict = {
       },
       step2: {
         title: "Añade el botón de lista de deseos a las páginas de producto",
-        desc: "En el editor de temas, abre cualquier página de producto, haz clic en Añadir bloque y selecciona WishKeeper – Botón de lista de deseos. Guarda tu tema. Ahora los clientes pueden guardar productos directamente desde las páginas de producto.",
+        desc: "En el editor de temas, abre cualquier página de producto, haz clic en Añadir bloque y selecciona WishKeeper: Botón de lista de deseos. Guarda tu tema. Ahora los clientes pueden guardar productos directamente desde las páginas de producto.",
       },
       step3: {
         title: "Cómo acceden los clientes a su lista de deseos",
@@ -1090,7 +1090,7 @@ const es: Dict = {
     },
     customButton: {
       title: "Botón de lista de deseos personalizado",
-      desc: "¿Ya tienes tu propio botón \"Añadir a la lista de deseos\" en tu tema? Pega su HTML y lo conectaremos automáticamente — sin editar código.",
+      desc: "¿Ya tienes tu propio botón \"Añadir a la lista de deseos\" en tu tema? Pega su HTML y lo conectaremos automáticamente, sin editar código.",
       htmlLabel: "HTML del botón",
       tip: "Consejo: en tu tienda, haz clic derecho en tu botón de lista de deseos existente, elige \"Inspeccionar\" y pega aquí el HTML de ese elemento.",
       iconCssLabel: "CSS del icono (opcional)",
@@ -1460,7 +1460,7 @@ const fr: Dict = {
       },
       step2: {
         title: "Ajoutez le bouton de liste de souhaits aux pages produit",
-        desc: "Dans l'éditeur de thème, ouvrez une page produit, cliquez sur Ajouter un bloc et sélectionnez WishKeeper – Bouton de liste de souhaits. Enregistrez votre thème. Les clients peuvent désormais enregistrer des produits directement depuis les pages produit.",
+        desc: "Dans l'éditeur de thème, ouvrez une page produit, cliquez sur Ajouter un bloc et sélectionnez WishKeeper: Bouton de liste de souhaits. Enregistrez votre thème. Les clients peuvent désormais enregistrer des produits directement depuis les pages produit.",
       },
       step3: {
         title: "Comment les clients accèdent à leur liste de souhaits",
@@ -1511,7 +1511,7 @@ const fr: Dict = {
     },
     customButton: {
       title: "Bouton de liste de souhaits personnalisé",
-      desc: "Vous avez déjà votre propre bouton \"Ajouter à la liste de souhaits\" dans votre thème ? Collez son HTML et nous le connecterons automatiquement — aucune modification de code nécessaire.",
+      desc: "Vous avez déjà votre propre bouton \"Ajouter à la liste de souhaits\" dans votre thème ? Collez son HTML et nous le connecterons automatiquement, sans aucune modification de code.",
       htmlLabel: "HTML du bouton",
       tip: "Astuce : sur votre boutique, faites un clic droit sur votre bouton de liste de souhaits existant, choisissez \"Inspecter\", puis copiez-collez le HTML de cet élément ici.",
       iconCssLabel: "CSS de l'icône (facultatif)",
@@ -1519,7 +1519,7 @@ const fr: Dict = {
     },
     manualButton: {
       title: "Bouton Ajouter à la liste de souhaits (placement manuel)",
-      desc: "Vous n'avez pas encore votre propre bouton de liste de souhaits ? Copiez celui-ci, déjà prêt, et collez-le dans un bloc \"Custom Liquid\" n'importe où sur votre page produit — il fonctionne instantanément, entièrement stylisé et connecté.",
+      desc: "Vous n'avez pas encore votre propre bouton de liste de souhaits ? Copiez celui-ci, déjà prêt, et collez-le dans un bloc \"Custom Liquid\" n'importe où sur votre page produit. Il fonctionne instantanément, entièrement stylisé et connecté.",
       tip: "Astuce : dans l'éditeur de thème, ouvrez une page produit, ajoutez un bloc \"Custom Liquid\" là où vous voulez le bouton, puis collez ce code.",
     },
     emailAlerts: {
@@ -1881,7 +1881,7 @@ const it: Dict = {
       },
       step2: {
         title: "Aggiungi il pulsante Lista dei desideri alle pagine prodotto",
-        desc: "Nell'editor del tema, apri una pagina prodotto, clicca su Aggiungi blocco e seleziona WishKeeper – Pulsante lista dei desideri. Salva il tema. I clienti possono ora salvare i prodotti direttamente dalle pagine prodotto.",
+        desc: "Nell'editor del tema, apri una pagina prodotto, clicca su Aggiungi blocco e seleziona WishKeeper: Pulsante lista dei desideri. Salva il tema. I clienti possono ora salvare i prodotti direttamente dalle pagine prodotto.",
       },
       step3: {
         title: "Come i clienti accedono alla loro lista dei desideri",
@@ -1932,7 +1932,7 @@ const it: Dict = {
     },
     customButton: {
       title: "Pulsante lista desideri personalizzato",
-      desc: "Hai già un tuo pulsante \"Aggiungi alla lista desideri\" nel tema? Incolla il suo HTML e lo collegheremo automaticamente — nessuna modifica al codice necessaria.",
+      desc: "Hai già un tuo pulsante \"Aggiungi alla lista desideri\" nel tema? Incolla il suo HTML e lo collegheremo automaticamente, senza modifiche al codice.",
       htmlLabel: "HTML del pulsante",
       tip: "Suggerimento: nel tuo negozio, fai clic destro sul pulsante wishlist esistente, scegli \"Ispeziona\" e incolla qui l'HTML di quell'elemento.",
       iconCssLabel: "CSS dell'icona (facoltativo)",

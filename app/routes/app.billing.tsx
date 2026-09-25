@@ -89,7 +89,6 @@ export default function BillingPage() {
   const navigation = useNavigation();
   const isLoading = navigation.state !== "idle";
   const t = getTranslator(language);
-  const basicFeatures = getTranslatedList(language, "billing.basicFeatures");
   const proFeatures = getTranslatedList(language, "billing.proFeatures");
 
   useEffect(() => {
@@ -146,7 +145,7 @@ export default function BillingPage() {
           </div>
         )}
 
-        <div className="bl-plans-grid">
+        <div className="bl-plans-grid" style={{ gridTemplateColumns: "minmax(0, 460px)", justifyContent: "center" }}>
           {(Object.keys(plans) as PlanKey[]).map((planKey) => {
             const plan = plans[planKey];
             const isActive = activePlanKey === planKey;
@@ -156,8 +155,7 @@ export default function BillingPage() {
 
             return (
               <div key={planKey} className={["bl-plan-card", isActive ? "bl-plan-card--active" : "", isPro ? "bl-plan-card--pro" : ""].join(" ")}>
-                {isPro && !isActive && <div className="bl-plan-card__popular">{t("billing.mostPopular")}</div>}
-
+                
                 <div className="bl-plan-card__head">
                   <h2 className="bl-plan-card__name">{planKey.charAt(0).toUpperCase() + planKey.slice(1)}</h2>
                   <div className="bl-plan-card__price-row">
@@ -174,7 +172,7 @@ export default function BillingPage() {
                   <div>
                     <div className="bl-plan-card__features-label">{t("billing.featuresIncluded")}</div>
                     <ul className="bl-plan-card__features">
-                      {(isPro ? proFeatures : basicFeatures).map((f: string) => (
+                      {proFeatures.map((f: string) => (
                         <li key={f} className="bl-plan-card__feature">
                           <span className={`bl-plan-card__feature-check ${isPro ? "bl-plan-card__feature-check--violet" : "bl-plan-card__feature-check--gold"}`}>
                             <IconCheck size={8} />

@@ -357,7 +357,11 @@
         })
       })
         .then(function (res) {
-          if (!res.ok) { setActive(isActive); return; }
+          if (!res.ok) {
+            console.warn("[WishKeeper] wishlist request failed:", action, res.status, res.url);
+            setActive(isActive);
+            return;
+          }
           var imgEl = document.querySelector('.product__media img, .product-media img, .product__photo img, .product-featured-media img, [class*="product"] .media img');
           var titleEl = document.querySelector('h1.product__title, h1[class*="product"], .product__title h1, h1');
           var imgSrc = imgEl ? imgEl.src : null;

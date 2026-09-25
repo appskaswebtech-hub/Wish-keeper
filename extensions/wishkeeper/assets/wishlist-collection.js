@@ -539,9 +539,11 @@
           syncButtons(productId, true);
           updateHeaderBadge(1);
           toastForButton(btn, "add");
+        } else {
+          console.warn("[WishKeeper] add failed, status:", res.status);
         }
       })
-      .catch(function () { })
+      .catch(function (err) { console.warn("[WishKeeper] add request error:", err); })
       .finally(function () {
         btn.style.opacity = "";
         btn.style.pointerEvents = "";
@@ -560,7 +562,7 @@
     Promise.all(variantIds.map(function (vid) { return postWishlist(productId, vid, "remove"); }))
       .then(function (responses) {
         var allOk = responses.every(function (r) { return r.ok; });
-        if (!allOk) return;
+        if (!allOk) { console.warn("[WishKeeper] remove failed:", responses.map(function (r) { return r.status; })); return; }
         wishlistedIds.delete(productId);
         wishlistRows = wishlistRows.filter(function (r) { return String(r.productId) !== String(productId); });
         syncButtons(productId, false);

@@ -3,6 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { getActiveSubscription } from "../services/billing.server";
+import { syncShopPlanFromSubscription } from "../utils/planUtils";
 import { isWishlistIconEmbedEnabled } from "../services/theme.server";
 import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
@@ -19,6 +20,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const store = await findOrCreateStore(session.shop, session.accessToken!);
   const subscription = await getActiveSubscription(admin);
   const hasActivePlan = !!subscription;
+  // The storefront reads the plan from the DB, so keep it in step (dev stores count as Pro).
+  await syncShopPlanFromSubscription(session.shop, subscription).catch((err) =>
+    console.error("[overview] shop plan sync failed:", err)
+  );
   // Live store without a plan: land straight on Billing (other pages show the subscribe popup).
   if (!hasActivePlan) return redirect("/app/billing");
   const settings = await getStoreSettings(store.id);

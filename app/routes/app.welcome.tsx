@@ -5,6 +5,8 @@ import { Page } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
 import { getStoreSettingsByShop } from "../services/wishlist.server";
+import { getActiveSubscription } from "../services/billing.server";
+import { syncShopPlanFromSubscription } from "../utils/planUtils";
 import { resolveLanguage, getSessionLocale } from "../i18n/language.server";
 import { getTranslator, getTranslatedList } from "../i18n/translations";
 
@@ -126,7 +128,11 @@ function VideoPlayer({ src }: { src: string }) {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
+  const subscription = await getActiveSubscription(admin);
+  await syncShopPlanFromSubscription(session.shop, subscription).catch((err) =>
+    console.error("[welcome] shop plan sync failed:", err)
+  );
   const settings = await getStoreSettingsByShop(session.shop);
   const language = resolveLanguage(settings?.language, getSessionLocale(session));
   const video = resolveVideo(process.env.SETUP_VIDEO_URL || DEFAULT_SETUP_VIDEO);

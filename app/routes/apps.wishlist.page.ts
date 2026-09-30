@@ -597,29 +597,31 @@
         var closeBtn = document.querySelector('.cart-drawer__close-button, [class*="cart-drawer"][class*="close"]');
         if (closeBtn) {
           var r = closeBtn.getBoundingClientRect();
-          if (r.width > 0 && r.height > 0) return;
+          if (r.width > 0 && r.height > 0) { console.log('[wl-debug] openCartDrawer: already open (close-btn visible), stopping'); return; }
         }
 
         var horizonBtn = document.querySelector('button[aria-label="Cart"]');
-        if (horizonBtn) { horizonBtn.click(); return; }
+        if (horizonBtn) { console.log('[wl-debug] openCartDrawer: clicking horizon cart button'); horizonBtn.click(); return; }
 
         if (window.Alpine) {
-          try { Alpine.store('cart').open(); return; } catch(e) {}
-          try { Alpine.store('cartDrawer').open(); return; } catch(e) {}
-          try { Alpine.store('cart').isOpen = true; return; } catch(e) {}
+          try { Alpine.store('cart').open(); console.log('[wl-debug] openCartDrawer: Alpine cart.open()'); return; } catch(e) {}
+          try { Alpine.store('cartDrawer').open(); console.log('[wl-debug] openCartDrawer: Alpine cartDrawer.open()'); return; } catch(e) {}
+          try { Alpine.store('cart').isOpen = true; console.log('[wl-debug] openCartDrawer: Alpine cart.isOpen = true'); return; } catch(e) {}
         }
 
+        console.log('[wl-debug] openCartDrawer: dispatching open-cart / open-cart-drawer window events');
         window.dispatchEvent(new CustomEvent('open-cart', { bubbles: true }));
         window.dispatchEvent(new CustomEvent('open-cart-drawer', { bubbles: true }));
 
         var drawer = document.querySelector('cart-drawer');
         if (drawer) {
-          if (typeof drawer.show === 'function') { drawer.show(); return; }
-          if (typeof drawer.open === 'function') { drawer.open(); return; }
+          if (typeof drawer.show === 'function') { console.log('[wl-debug] openCartDrawer: drawer.show()'); drawer.show(); return; }
+          if (typeof drawer.open === 'function') { console.log('[wl-debug] openCartDrawer: drawer.open()'); drawer.open(); return; }
           var summary = drawer.querySelector('summary');
-          if (summary && !drawer.hasAttribute('open')) { summary.click(); return; }
+          if (summary && !drawer.hasAttribute('open')) { console.log('[wl-debug] openCartDrawer: clicking <summary>'); summary.click(); return; }
         }
 
+        console.log('[wl-debug] openCartDrawer: dispatching cart:open / theme:cart:open / cart:open-drawer document events');
         ['cart:open', 'theme:cart:open', 'cart:open-drawer'].forEach(function (name) {
           document.dispatchEvent(new CustomEvent(name, { bubbles: true }));
         });
@@ -630,8 +632,9 @@
         ];
         for (var i = 0; i < btnSelectors.length; i++) {
           var el = document.querySelector(btnSelectors[i]);
-          if (el) { el.click(); return; }
+          if (el) { console.log('[wl-debug] openCartDrawer: clicking fallback button', btnSelectors[i]); el.click(); return; }
         }
+        console.log('[wl-debug] openCartDrawer: no method matched, did nothing');
       }
 
       function addToCart(variantId) {

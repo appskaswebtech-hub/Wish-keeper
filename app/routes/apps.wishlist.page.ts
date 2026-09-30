@@ -670,6 +670,18 @@
                     var targetEl = document.querySelector(t.selector);
                     console.log('[wl-debug]', t.key, 'freshEl found:', !!freshEl, 'targetEl found on page:', !!targetEl);
                     if (freshEl && targetEl) {
+                      // Some themes (e.g. Impulse) render the item list inside the drawer
+                      // purely client-side via their own JS (a [data-products] container
+                      // that starts empty in server HTML and gets filled in on drawer open).
+                      // A section-rendered snapshot of that drawer still has an empty
+                      // [data-products], so overwriting it here would wipe out the correct,
+                      // already-rendered items a moment after the theme's own JS fills them
+                      // in. Skip the overwrite for those and let the theme's native open
+                      // handle its own rendering untouched.
+                      if (targetEl.querySelector('[data-products]')) {
+                        console.log('[wl-debug]', t.key, 'skipped: theme renders its own [data-products]');
+                        return;
+                      }
                       targetEl.innerHTML = freshEl.innerHTML;
                       if (t.key === 'cart-drawer') drawerRefreshed = true;
                     }
@@ -738,6 +750,15 @@
                   var freshEl = doc.querySelector(sel);
                   var targetEl = document.querySelector(sel);
                   if (freshEl && targetEl) {
+                    // Same reasoning as refreshCartSections: a freshly fetched page's HTML
+                    // is still server-rendered markup, so a theme's own JS-populated
+                    // [data-products] list (e.g. Impulse) comes back empty here too.
+                    // Leave those containers alone so the theme's native drawer-open
+                    // rendering isn't overwritten a moment after it correctly shows items.
+                    if (targetEl.querySelector('[data-products]')) {
+                      console.log('[wl-debug] universal refresh skipped for', sel, '(theme renders its own [data-products])');
+                      return;
+                    }
                     console.log('[wl-debug] universal refresh applied for', sel);
                     targetEl.innerHTML = freshEl.innerHTML;
                   }

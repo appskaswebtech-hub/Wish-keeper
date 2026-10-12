@@ -787,7 +787,7 @@
             btnEl.textContent = T.added;
             btnEl.classList.add('added');
           } else {
-            console.error('Cart add failed', xhr.status);
+            console.error('Cart add failed', xhr.status, xhr.responseText);
             btnEl.textContent = T.error;
           }
           setTimeout(function () {

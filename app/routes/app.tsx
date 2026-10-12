@@ -6,6 +6,7 @@ import { authenticate } from "../shopify.server";
 import { getStoreSettingsByShop } from "../services/wishlist.server";
 import { resolveLanguage, getSessionLocale } from "../i18n/language.server";
 import { getTranslator } from "../i18n/translations";
+import SupportChatWidget from "../components/SupportChatWidget";
 import loaderStyles from "../styles/loader.css?url";
 
 export const links = () => [{ rel: "stylesheet", href: loaderStyles }];
@@ -22,7 +23,7 @@ export default function App() {
   const navigation = useNavigation();
   const isNavigating = navigation.state === "loading";
   const t = getTranslator(language);
-
+  
   return (
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
@@ -43,6 +44,7 @@ export default function App() {
         </div>
       )}
       <Outlet />
+      <SupportChatWidget />
     </AppProvider>
   );
 }

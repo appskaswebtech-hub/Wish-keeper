@@ -8,6 +8,10 @@ node_modules
 /app/build
 /public/build/
 /public/_dev
+
+# Support chat attachments uploaded by merchants -- real user files, never committed
+/public/uploads/support/*
+!/public/uploads/support/.gitkeep
 /app/public/build
 /prisma/dev.sqlite
 /prisma/dev.sqlite-journal

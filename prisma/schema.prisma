@@ -155,3 +155,36 @@ model ShopPlan {
 
   @@index([shop])
 }
+
+// One support chat thread per shop, between the merchant (inside the embedded
+// app widget) and WishKeeper's team (via the future admin dashboard).
+model SupportThread {
+  id               String           @id @default(uuid())
+  shop             String           @unique
+  shopUnreadCount  Int              @default(0)
+  adminUnreadCount Int              @default(0)
+  // Last time each side actually opened/viewed this thread -- used to show
+  // a "Seen" receipt under the admin's most recent message.
+  shopLastReadAt   DateTime?
+  adminLastReadAt  DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  messages         SupportMessage[]
+
+  @@index([shop])
+}
+
+model SupportMessage {
+  id             String        @id @default(uuid())
+  threadId       String
+  thread         SupportThread @relation(fields: [threadId], references: [id])
+  sender         String // "shop" | "admin"
+  body           String?       @db.Text
+  attachmentUrl  String?
+  attachmentName String?
+  attachmentType String?
+  attachmentSize Int?
+  createdAt      DateTime      @default(now())
+
+  @@index([threadId, createdAt])
+}

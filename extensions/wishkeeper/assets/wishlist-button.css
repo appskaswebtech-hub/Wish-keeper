@@ -2,6 +2,15 @@
   --wl-active: #e74c6f;
 }
 
+/* Icon-only display mode: where the icon sits within its own button space.
+   Set from app Settings, not a per-block theme option. */
+.wl-btn-wrapper[data-wl-icon-pos] {
+  display: flex;
+}
+.wl-btn-wrapper[data-wl-icon-pos="left"] { justify-content: flex-start; }
+.wl-btn-wrapper[data-wl-icon-pos="center"] { justify-content: center; }
+.wl-btn-wrapper[data-wl-icon-pos="right"] { justify-content: flex-end; }
+
 .wl-btn {
   display: inline-flex;
   align-items: center;

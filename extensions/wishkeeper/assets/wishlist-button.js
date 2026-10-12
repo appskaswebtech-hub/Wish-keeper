@@ -35,6 +35,14 @@
       '<button style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:0;line-height:1;flex-shrink:0;pointer-events:all;margin-left:4px;" onclick="(function(el){el.style.opacity=\'0\';el.style.transform=\'translateX(-20px)\';setTimeout(function(){el.remove();},350);})(this.parentNode)">✕</button>';
 
     tc.appendChild(toast);
+
+    // Never more than 3 stacked at once -- drop the oldest immediately
+    // instead of letting them pile up from repeated clicks.
+    var MAX_TOASTS = 3;
+    while (tc.children.length > MAX_TOASTS) {
+      tc.removeChild(tc.firstElementChild);
+    }
+
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         toast.style.opacity = "1";
@@ -45,7 +53,7 @@
       toast.style.opacity = "0";
       toast.style.transform = "translateX(-20px)";
       setTimeout(function () { toast.remove(); }, 350);
-    }, 4000);
+    }, 1500);
   }
 
   function initWrapper(wrapper) {
@@ -202,6 +210,21 @@
               textRemovedToast = btnI18n[lang].removedToast;
               if (textEl) textEl.textContent = isActive ? textAdded : textAdd;
               btn.setAttribute("aria-label", isActive ? textRemove : textAdd);
+            }
+
+            // Display mode and wording now live in app Settings instead of
+            // the theme block's own "Button style" option (that control was
+            // removed from the block schema). Behavior otherwise unchanged.
+            if (d.settings.buttonDisplayMode === "icon") {
+              isIconOnlyBtn = true;
+              btn.classList.remove("wl-btn--full");
+              btn.classList.add("wl-btn--icon");
+              if (textEl) { textEl.remove(); textEl = null; }
+              wrapper.setAttribute("data-wl-icon-pos", d.settings.buttonIconPosition || "left");
+            } else if (d.settings.buttonText && d.settings.buttonText.trim()) {
+              textAdd = d.settings.buttonText.trim().slice(0, 20);
+              if (textEl && !isActive) textEl.textContent = textAdd;
+              if (!isActive) btn.setAttribute("aria-label", textAdd);
             }
 
             if (wlSettings.customIconSvg.trim()) {

@@ -379,21 +379,47 @@
         .catch(function () { });
     }
 
-    // Instant, no-network badge nudge: called right after an add/remove
-    // succeeds so the count reflects the change immediately instead of
-    // waiting on a second round-trip. refreshBadge() still runs afterward
-    // (via the callers) to reconcile with the server.
-    window.__wlBumpBadge = function (delta) {
+    // An optimistic bump followed immediately by a server refresh could
+    // show two different numbers a moment apart (a visible flicker) if the
+    // guess didn't match reality. Instead, show a small spinner on the
+    // badge itself for at least 1.5s and only ever reveal the real,
+    // server-confirmed count once -- no intermediate guess is ever shown.
+    var BADGE_LOADER_MS = 1500;
+    var badgeLoaderStartedAt = null;
+    if (!document.getElementById("wl-hdr-badge-spin-style")) {
+      var spinStyle = document.createElement("style");
+      spinStyle.id = "wl-hdr-badge-spin-style";
+      spinStyle.textContent = "@keyframes wl-hdr-spin{to{transform:rotate(360deg)}}.wl-hdr-badge-spinner{display:inline-block;width:9px;height:9px;border:1.5px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:wl-hdr-spin 0.6s linear infinite;vertical-align:middle;}";
+      document.head.appendChild(spinStyle);
+    }
+
+    window.__wlBumpBadge = function () {
       var badge = document.getElementById("wl-hdr-badge");
       if (!badge) return;
-      var current = parseInt(badge.textContent, 10);
-      if (isNaN(current)) current = 0;
-      var next = Math.max(0, current + delta);
-      badge.textContent = next > 99 ? "99+" : next;
-      badge.style.display = next > 0 ? "block" : "none";
+      badgeLoaderStartedAt = Date.now();
+      badge.innerHTML = '<span class="wl-hdr-badge-spinner"></span>';
+      badge.style.display = "block";
     };
 
-    window.__wlRefreshBadge = refreshBadge;
+    window.__wlRefreshBadge = function () {
+      if (!customerId) return;
+      fetch(proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&customerId=" + encodeURIComponent(customerId) + "&action=count")
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var count = data.count || 0;
+          var elapsed = badgeLoaderStartedAt ? Date.now() - badgeLoaderStartedAt : BADGE_LOADER_MS;
+          var wait = Math.max(0, BADGE_LOADER_MS - elapsed);
+          setTimeout(function () {
+            badgeLoaderStartedAt = null;
+            var badge = document.getElementById("wl-hdr-badge");
+            if (!badge) return;
+            badge.textContent = count > 99 ? "99+" : count;
+            badge.style.display = count > 0 ? "block" : "none";
+          }, wait);
+        })
+        .catch(function () { badgeLoaderStartedAt = null; });
+    };
+
     refreshBadge();
   }
 

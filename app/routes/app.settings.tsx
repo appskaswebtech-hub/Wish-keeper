@@ -75,6 +75,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     smtpFromName: (formData.get("smtpFromName") as string) || null,
     smtpFromEmail: (formData.get("smtpFromEmail") as string) || null,
     customWishlistButtonHtml: (formData.get("customWishlistButtonHtml") as string) || null,
+    buttonDisplayMode: (formData.get("buttonDisplayMode") as string) || "text",
+    // The input enforces the 14-char guidance for anything a merchant
+    // actually types; this is only a generous anti-abuse ceiling, kept well
+    // above 14 so it never truncates the shipped default ("Add to
+    // Wishlist", 16 chars) into broken wording for stores that haven't
+    // customized it.
+    buttonText: ((formData.get("buttonText") as string) || "Add to Wishlist").slice(0, 40),
+    buttonIconPosition: (formData.get("buttonIconPosition") as string) || "left",
   });
   return data({ success: true });
 };
@@ -289,6 +297,9 @@ export default function Settings() {
     smtpFromName: settings?.smtpFromName ?? "",
     smtpFromEmail: settings?.smtpFromEmail ?? "",
     customWishlistButtonHtml: settings?.customWishlistButtonHtml ?? "",
+    buttonDisplayMode: settings?.buttonDisplayMode ?? "text",
+    buttonText: settings?.buttonText ?? "Add to Wishlist",
+    buttonIconPosition: settings?.buttonIconPosition ?? "left",
   });
 
   const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -478,6 +489,89 @@ export default function Settings() {
                       ? <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }} dangerouslySetInnerHTML={{ __html: form.customIconSvg }} />
                       : <PreviewIcon style={form.iconStyle} color={form.customIconColor} />
                     }
+                  </div>
+                </div>
+              </div>
+
+              <div className="st-divider" />
+              <div className="st-field">
+                <label className="st-field__label">Add to Wishlist button</label>
+                <p style={{ fontSize: 12, color: "#6b7280", margin: "2px 0 10px" }}>
+                  Choose whether the product-page button shows your own wording, or just the icon.
+                </p>
+                <div className="st-field-row">
+                  <div className="st-field">
+                    <label className="st-field__label">Display</label>
+                    <select
+                      className="st-field__select"
+                      value={form.buttonDisplayMode}
+                      onChange={(e) => set("buttonDisplayMode", e.target.value)}
+                    >
+                      <option value="text">Icon with text</option>
+                      <option value="icon">Icon only</option>
+                    </select>
+                  </div>
+
+                  {form.buttonDisplayMode === "text" ? (
+                    <div className="st-field">
+                      <label className="st-field__label">Button text</label>
+                      <input
+                        type="text"
+                        className="st-field__input"
+                        maxLength={16}
+                        value={form.buttonText}
+                        onChange={(e) => set("buttonText", e.target.value.slice(0, 16))}
+                        placeholder="Add to Wishlist"
+                      />
+                      <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>{form.buttonText.length}/16</div>
+                    </div>
+                  ) : (
+                    <div className="st-field">
+                      <label className="st-field__label">Icon position</label>
+                      <select
+                        className="st-field__select"
+                        value={form.buttonIconPosition}
+                        onChange={(e) => set("buttonIconPosition", e.target.value)}
+                      >
+                        <option value="left">Left</option>
+                        <option value="center">Center</option>
+                        <option value="right">Right</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <label className="st-field__label">Preview</label>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        form.buttonDisplayMode === "icon"
+                          ? form.buttonIconPosition === "right" ? "flex-end" : form.buttonIconPosition === "center" ? "center" : "flex-start"
+                          : "flex-start",
+                      padding: "14px 16px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: 8,
+                      background: "var(--cream)",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: form.buttonDisplayMode === "icon" ? 8 : "9px 18px",
+                        borderRadius: form.buttonDisplayMode === "icon" ? "50%" : 100,
+                        border: `1.5px solid ${form.customIconColor}`,
+                        color: form.customIconColor,
+                        fontSize: 13,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <PreviewIcon style={form.iconStyle} color={form.customIconColor} />
+                      {form.buttonDisplayMode === "text" && (form.buttonText || "Add to Wishlist")}
+                    </span>
                   </div>
                 </div>
               </div>

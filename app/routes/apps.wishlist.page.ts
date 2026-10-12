@@ -265,6 +265,14 @@
         '<div class="wl-toast-body"><div class="wl-toast-title">' + title + '</div><div class="wl-toast-msg">' + message + '</div></div>' +
         '<button type="button" class="wl-toast-close">✕</button>';
       container.appendChild(t);
+
+      // Never more than 3 stacked at once -- drop the oldest immediately
+      // instead of letting them pile up from repeated clicks.
+      var MAX_TOASTS = 3;
+      while (container.children.length > MAX_TOASTS) {
+        container.removeChild(container.firstElementChild);
+      }
+
       t.querySelector(".wl-toast-close").addEventListener("click", function () {
         t.classList.remove("show");
         setTimeout(function () { t.remove(); }, 400);
@@ -273,7 +281,7 @@
       setTimeout(function () {
         t.classList.remove("show");
         setTimeout(function () { t.remove(); }, 400);
-      }, 3000);
+      }, 1500);
     }
 
     function loadWishlist(isResync) {
@@ -331,7 +339,6 @@
       fetch(proxyUrl + "/api/products?shop=" + encodeURIComponent(shop) + "&customerId=" + encodeURIComponent(customerId))
         .then(function (r) { return r.json(); })
         .then(function (data) {
-          console.log('[wl-debug] reconcile response', { error: data.error, itemCount: (data.items || []).length, allItemsBefore: allItems.length });
           if (data.error) return;
           var freshItems = data.items || [];
 
@@ -475,16 +482,13 @@
       var title = titleEl ? titleEl.textContent : "Product";
 
       if (card) card.classList.add("removing");
-      console.log("[wl-debug] __wlRemove called", { pid: pid, vid: vid, fromCart: fromCart, cardFound: !!card });
 
       fetch(proxyUrl + "/api/wishlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shop: shop, customerId: customerId, productId: pid, variantId: vid || null, action: "remove" })
       }).then(function (res) {
-        console.log("[wl-debug] remove fetch resolved", res.status);
         setTimeout(function () {
-          console.log("[wl-debug] removing card from DOM now", { cardStillFound: !!card, cardInDocument: card ? document.contains(card) : false });
           var wasVisible = allItems.slice(0, shownCount).some(isMatch);
           allItems = allItems.filter(function (i) { return !isMatch(i); });
           if (wasVisible && shownCount > 0) shownCount--;
@@ -597,31 +601,36 @@
         var closeBtn = document.querySelector('.cart-drawer__close-button, [class*="cart-drawer"][class*="close"]');
         if (closeBtn) {
           var r = closeBtn.getBoundingClientRect();
-          if (r.width > 0 && r.height > 0) { console.log('[wl-debug] openCartDrawer: already open (close-btn visible), stopping'); return; }
+          if (r.width > 0 && r.height > 0) return;
         }
 
         var horizonBtn = document.querySelector('button[aria-label="Cart"]');
-        if (horizonBtn) { console.log('[wl-debug] openCartDrawer: clicking horizon cart button'); horizonBtn.click(); return; }
-
-        if (window.Alpine) {
-          try { Alpine.store('cart').open(); console.log('[wl-debug] openCartDrawer: Alpine cart.open()'); return; } catch(e) {}
-          try { Alpine.store('cartDrawer').open(); console.log('[wl-debug] openCartDrawer: Alpine cartDrawer.open()'); return; } catch(e) {}
-          try { Alpine.store('cart').isOpen = true; console.log('[wl-debug] openCartDrawer: Alpine cart.isOpen = true'); return; } catch(e) {}
+        if (horizonBtn) {
+          // This button TOGGLES the drawer. If the cart:update event below
+          // already opened it, clicking this again would close it right
+          // back -- the exact "opens then vanishes" bug. Only click it if
+          // nothing is open yet.
+          if (!document.querySelector('dialog[open]')) horizonBtn.click();
+          return;
         }
 
-        console.log('[wl-debug] openCartDrawer: dispatching open-cart / open-cart-drawer window events');
+        if (window.Alpine) {
+          try { Alpine.store('cart').open(); return; } catch(e) {}
+          try { Alpine.store('cartDrawer').open(); return; } catch(e) {}
+          try { Alpine.store('cart').isOpen = true; return; } catch(e) {}
+        }
+
         window.dispatchEvent(new CustomEvent('open-cart', { bubbles: true }));
         window.dispatchEvent(new CustomEvent('open-cart-drawer', { bubbles: true }));
 
         var drawer = document.querySelector('cart-drawer');
         if (drawer) {
-          if (typeof drawer.show === 'function') { console.log('[wl-debug] openCartDrawer: drawer.show()'); drawer.show(); return; }
-          if (typeof drawer.open === 'function') { console.log('[wl-debug] openCartDrawer: drawer.open()'); drawer.open(); return; }
+          if (typeof drawer.show === 'function') { drawer.show(); return; }
+          if (typeof drawer.open === 'function') { drawer.open(); return; }
           var summary = drawer.querySelector('summary');
-          if (summary && !drawer.hasAttribute('open')) { console.log('[wl-debug] openCartDrawer: clicking <summary>'); summary.click(); return; }
+          if (summary && !drawer.hasAttribute('open')) { summary.click(); return; }
         }
 
-        console.log('[wl-debug] openCartDrawer: dispatching cart:open / theme:cart:open / cart:open-drawer document events');
         ['cart:open', 'theme:cart:open', 'cart:open-drawer'].forEach(function (name) {
           document.dispatchEvent(new CustomEvent(name, { bubbles: true }));
         });
@@ -632,9 +641,8 @@
         ];
         for (var i = 0; i < btnSelectors.length; i++) {
           var el = document.querySelector(btnSelectors[i]);
-          if (el) { console.log('[wl-debug] openCartDrawer: clicking fallback button', btnSelectors[i]); el.click(); return; }
+          if (el) { el.click(); return; }
         }
-        console.log('[wl-debug] openCartDrawer: no method matched, did nothing');
       }
 
       function addToCart(variantId) {
@@ -652,26 +660,25 @@
         function refreshCartSections() {
           if (window.Alpine) return; // Alpine-based themes manage their own DOM; see refreshCartUniversal.
           try {
-            fetch('/cart?sections=cart-drawer,cart-icon-bubble,cart-notification,cart-live-region-text')
-              .then(function (r) { console.log('[wl-debug] sections fetch status', r.status); return r.ok ? r.json() : null; })
+            fetch('/cart?sections=cart-drawer,cart-notification,cart-live-region-text')
+              .then(function (r) { return r.ok ? r.json() : null; })
               .then(function (sections) {
-                console.log('[wl-debug] sections keys found', sections ? Object.keys(sections) : null);
                 if (!sections) return;
                 var drawerRefreshed = false;
+                // '#cart-icon-bubble' deliberately excluded -- see the note
+                // on refreshCartUniversal's candidates list above.
                 var targets = [
                   { key: 'cart-drawer', selector: '#CartDrawer' },
-                  { key: 'cart-icon-bubble', selector: '#cart-icon-bubble' },
                   { key: 'cart-notification', selector: '#cart-notification' },
                   { key: 'cart-live-region-text', selector: '#cart-live-region-text' },
                 ];
                 targets.forEach(function (t) {
                   var html = sections[t.key];
-                  if (!html) { console.log('[wl-debug] no html for section', t.key); return; }
+                  if (!html) return;
                   try {
                     var doc = new DOMParser().parseFromString(html, 'text/html');
                     var freshEl = doc.querySelector(t.selector);
                     var targetEl = document.querySelector(t.selector);
-                    console.log('[wl-debug]', t.key, 'freshEl found:', !!freshEl, 'targetEl found on page:', !!targetEl);
                     if (freshEl && targetEl) {
                       // Some themes (e.g. Impulse) render the item list inside the drawer
                       // purely client-side via their own JS (a [data-products] container
@@ -681,10 +688,19 @@
                       // already-rendered items a moment after the theme's own JS fills them
                       // in. Skip the overwrite for those and let the theme's native open
                       // handle its own rendering untouched.
-                      if (targetEl.querySelector('[data-products]')) {
-                        console.log('[wl-debug]', t.key, 'skipped: theme renders its own [data-products]');
-                        return;
-                      }
+                      //
+                      // Newer themes (Horizon and others) go further and render the
+                      // whole drawer as a self-managed custom element (e.g.
+                      // <cart-drawer>, often wrapping a native <dialog>). This runs
+                      // asynchronously and can land AFTER openCartDrawer() has already
+                      // opened it; overwriting the element's own markup at that point
+                      // desyncs its internal JS from the DOM and makes it look like it
+                      // silently closes itself a moment after opening. Skip those too.
+                      var isSelfManaged =
+                        targetEl.querySelector('[data-products]') ||
+                        /-/.test(targetEl.tagName) ||
+                        targetEl.querySelector('dialog');
+                      if (isSelfManaged) return;
                       targetEl.innerHTML = freshEl.innerHTML;
                       if (t.key === 'cart-drawer') drawerRefreshed = true;
                     }
@@ -719,10 +735,27 @@
         // HTML. Fully best-effort and decoupled from the cart mutation itself.
         function refreshCartUniversal() {
           try {
+            // Deliberately excludes the cart icon/bubble itself
+            // ('#cart-icon-bubble', '.cart-bubble__text-count'): newer themes
+            // (Horizon and others) render that icon as a self-managed web
+            // component (e.g. <cart-icon>), and overwriting part of its
+            // markup here desyncs the component's own JS from the DOM,
+            // corrupting the icon. syncCartBubble() already updates that
+            // count safely (textContent/class only, never innerHTML), so
+            // nothing is lost by leaving it out here.
+            // '.cart-items__wrapper' (Horizon's inner item-list div) was
+            // tried here and reverted: even though it's plain markup,
+            // overwriting it still causes Horizon's <cart-drawer> component
+            // to detect an "unexpected" DOM change and close itself a
+            // moment later. That component has no documented safe way for
+            // an external script to refresh it, so Horizon's drawer is left
+            // to open on its own (via openCartDrawer()) without us trying
+            // to populate its contents -- the add itself still succeeds
+            // (cart count/total are correct), customers just see the live
+            // item on the actual cart page.
             var candidates = [
               'cart-drawer', '#cart-drawer', '#CartDrawer', '#ajax-cart',
-              '.cart-drawer__inner', '[data-cart-drawer]', '#cart-icon-bubble',
-              '.cart-bubble__text-count'
+              '.cart-drawer__inner', '[data-cart-drawer]'
             ];
             if (window.Alpine) {
               // Alpine-based themes (e.g. Horizon) own and reactively render
@@ -755,14 +788,15 @@
                   if (freshEl && targetEl) {
                     // Same reasoning as refreshCartSections: a freshly fetched page's HTML
                     // is still server-rendered markup, so a theme's own JS-populated
-                    // [data-products] list (e.g. Impulse) comes back empty here too.
-                    // Leave those containers alone so the theme's native drawer-open
-                    // rendering isn't overwritten a moment after it correctly shows items.
-                    if (targetEl.querySelector('[data-products]')) {
-                      console.log('[wl-debug] universal refresh skipped for', sel, '(theme renders its own [data-products])');
-                      return;
-                    }
-                    console.log('[wl-debug] universal refresh applied for', sel);
+                    // [data-products] list (e.g. Impulse) comes back empty here too, and a
+                    // self-managed custom element (e.g. Horizon's <cart-drawer>, often
+                    // wrapping a native <dialog>) gets its internal state corrupted by a
+                    // raw markup swap landing after it's already open. Leave both alone.
+                    var isSelfManaged =
+                      targetEl.querySelector('[data-products]') ||
+                      /-/.test(targetEl.tagName) ||
+                      targetEl.querySelector('dialog');
+                    if (isSelfManaged) return;
                     targetEl.innerHTML = freshEl.innerHTML;
                   }
                 });
@@ -771,42 +805,118 @@
           } catch (e) { console.error('[wl-debug] refreshCartUniversal threw', e); }
         }
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/cart/add.js', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function () {
-          if (xhr.readyState !== 4) return;
-          if (xhr.status >= 200 && xhr.status < 300) {
-            syncCartBubble();
-            refreshCartSections();
-            refreshCartUniversal();
-            openCartDrawer();
-            showToast(title, T.addedToCart, imgSrc);
-            window.__wlRemove(pid, vid, true);
-            setTimeout(reconcileWishlist, 700);
-            btnEl.textContent = T.added;
-            btnEl.classList.add('added');
-          } else {
-            console.error('Cart add failed', xhr.status, xhr.responseText);
-            // 422 from /cart/add.js means Shopify itself refused this exact
-            // variant (sold out, no longer available, etc). Show it as
-            // unavailable right on the card instead of just a generic error
-            // that clears itself and invites clicking the same dead button
-            // again.
-            if (xhr.status === 422) {
-              btnEl.textContent = T.soldOut;
-              btnEl.disabled = true;
-              if (card && !card.querySelector('.wl-badge-oos')) {
-                var badge = document.createElement('span');
-                badge.className = 'wl-badge-oos';
-                badge.textContent = T.soldOut;
-                var imgWrap = card.querySelector('.wl-card-img-wrap');
-                if (imgWrap) imgWrap.appendChild(badge);
-              }
+        // fetch(), not XMLHttpRequest: newer themes' own cart components
+        // (Horizon and others built on Shopify's section-rendering runtime)
+        // watch for cart changes by wrapping window.fetch globally, not
+        // XMLHttpRequest. A raw XHR call is invisible to that, so the
+        // theme's own drawer never learns the cart changed and never
+        // re-renders itself. Using fetch for the exact same request lets
+        // the theme's own native refresh take over wherever it exists, with
+        // every one of our own fallbacks below still running unchanged for
+        // themes that don't do this.
+        fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: [{ id: parseInt(variantId), quantity: 1 }],
+            // Ask Shopify to render the drawer's section HTML as part of this
+            // same request. Horizon's cart-items-component only morphs the
+            // real item row when the sections HTML is already attached to the
+            // event it receives -- otherwise it tries to re-fetch the section
+            // itself against the CURRENT page URL, which fails silently here
+            // because our wishlist page is an app-proxy route, not a real
+            // theme template. sections_url pins the render context to a real
+            // theme page so that self-fetch path is never needed at all.
+            sections: 'cart-drawer-section',
+            sections_url: '/'
+          })
+        })
+          .then(function (res) {
+            if (res.ok) {
+              res.json().then(function (addResult) {
+                var sectionsHtml = addResult && addResult.sections;
+
+                // Horizon 2025+ themes: dispatch the theme's actual
+                // CartLinesUpdateEvent (from @shopify/events -- the same
+                // package cart-drawer-component and cart-items-component
+                // import and listen for). Passing detail.sections here is
+                // what lets cart-items-component morph the real item row
+                // directly instead of falling back to a self-fetch.
+                import('@shopify/events').then(function (mod) {
+                  var CartLinesUpdateEvent = mod && mod.CartLinesUpdateEvent;
+                  if (!CartLinesUpdateEvent) return;
+                  document.dispatchEvent(new CartLinesUpdateEvent({
+                    action: 'add',
+                    context: 'cart',
+                    lines: [{ id: String(variantId), quantity: 1 }],
+                    promise: Promise.resolve({
+                      detail: {
+                        sections: sectionsHtml || undefined,
+                        itemCount: addResult ? addResult.item_count : undefined,
+                        source: 'wishkeeper-wishlist',
+                        didError: false
+                      }
+                    })
+                  }));
+                }).catch(function (e) { console.error('[wl] CartLinesUpdateEvent dispatch failed', e); });
+
+                // Non-Horizon themes: generic event some other themes listen
+                // for. Fully decoupled from the dispatch above.
+                document.dispatchEvent(new CustomEvent('cart:update', {
+                  bubbles: true,
+                  detail: { data: { itemCount: addResult ? addResult.item_count : undefined, source: 'wishkeeper-wishlist' } }
+                }));
+              }).catch(function () {});
+
+              // Icon updates first (matches the store's native pacing: the
+              // cart count ticks up to 1, then a moment later the drawer
+              // opens). Opening the drawer in the same tick as the icon
+              // update made it feel instant/jarring compared to that.
+              setTimeout(function () {
+                syncCartBubble();
+                refreshCartSections();
+                refreshCartUniversal();
+              }, 120);
+              setTimeout(openCartDrawer, 450);
+
+              showToast(title, T.addedToCart, imgSrc);
+              window.__wlRemove(pid, vid, true);
+              setTimeout(reconcileWishlist, 700);
+              btnEl.textContent = T.added;
+              btnEl.classList.add('added');
+              scheduleReset();
               return;
             }
+            res.text().then(function (body) {
+              console.error('Cart add failed', res.status, body);
+              // 422 from /cart/add.js means Shopify itself refused this exact
+              // variant (sold out, no longer available, etc). Show it as
+              // unavailable right on the card instead of just a generic error
+              // that clears itself and invites clicking the same dead button
+              // again -- and leave it disabled permanently, not reset.
+              if (res.status === 422) {
+                btnEl.textContent = T.soldOut;
+                btnEl.disabled = true;
+                if (card && !card.querySelector('.wl-badge-oos')) {
+                  var badge = document.createElement('span');
+                  badge.className = 'wl-badge-oos';
+                  badge.textContent = T.soldOut;
+                  var imgWrap = card.querySelector('.wl-card-img-wrap');
+                  if (imgWrap) imgWrap.appendChild(badge);
+                }
+                return;
+              }
+              btnEl.textContent = T.error;
+              scheduleReset();
+            });
+          })
+          .catch(function (err) {
+            console.error('Cart add request failed', err);
             btnEl.textContent = T.error;
-          }
+            scheduleReset();
+          });
+
+        function scheduleReset() {
           setTimeout(function () {
             if (document.contains(btnEl)) {
               btnEl.disabled = false;
@@ -814,8 +924,7 @@
               btnEl.classList.remove('added');
             }
           }, 1500);
-        };
-        xhr.send(JSON.stringify({ items: [{ id: parseInt(variantId), quantity: 1 }] }));
+        }
       }
 
       getVariantId(addToCart);

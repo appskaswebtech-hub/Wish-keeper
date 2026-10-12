@@ -35,6 +35,14 @@
       '<button style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:0;line-height:1;flex-shrink:0;pointer-events:all;margin-left:4px;" onclick="(function(el){el.style.opacity=\'0\';el.style.transform=\'translateX(-20px)\';setTimeout(function(){el.remove();},350);})(this.parentNode)">✕</button>';
 
     tc.appendChild(toast);
+
+    // Never more than 3 stacked at once -- drop the oldest immediately
+    // instead of letting them pile up from repeated clicks.
+    var MAX_TOASTS = 3;
+    while (tc.children.length > MAX_TOASTS) {
+      tc.removeChild(tc.firstElementChild);
+    }
+
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         toast.style.opacity = "1";
@@ -45,7 +53,7 @@
       toast.style.opacity = "0";
       toast.style.transform = "translateX(-20px)";
       setTimeout(function () { toast.remove(); }, 350);
-    }, 4000);
+    }, 1500);
   }
 
   var SHOP = window.__wlCollectionConfig && window.__wlCollectionConfig.shop;
@@ -118,8 +126,74 @@
       ".wl-heart-btn.wl-c-clicked svg{animation:wl-chb 0.65s cubic-bezier(.4,0,.2,1)}" +
       ".wl-c-ripple{position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;pointer-events:none;border:2px solid " + ACTIVE_COLOR + ";animation:wl-crp 0.6s ease-out forwards}" +
       ".wl-c-ripple2{position:absolute;top:50%;left:50%;width:100%;height:100%;border-radius:50%;pointer-events:none;border:2px solid " + ACTIVE_COLOR + ";animation:wl-crp2 0.6s ease-out 0.15s forwards;opacity:0}" +
-      ".wl-c-float{position:absolute;top:-2px;left:50%;font-size:13px;pointer-events:none;animation:wl-cfh 0.7s ease-out forwards;z-index:999999}";
+      ".wl-c-float{position:absolute;top:-2px;left:50%;font-size:13px;pointer-events:none;animation:wl-cfh 0.7s ease-out forwards;z-index:999999}" +
+      "@keyframes wl-c-spin{to{transform:rotate(360deg)}}" +
+      ".wl-c-spinner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}" +
+      ".wl-c-spinner svg{animation:wl-c-spin 0.6s linear infinite}";
     document.head.appendChild(animStyle);
+  }
+
+  // Shows a small spinner over the clicked heart button (not the page), and
+  // keeps it up for at least a second so it reads as a deliberate loading
+  // state even when the request itself finishes faster. A product can
+  // appear more than once on a page (main grid + "You may also like", a
+  // slider, etc), so this also locks every OTHER copy of the same
+  // product's heart -- otherwise clicking a duplicate elsewhere before the
+  // first request finishes fires a second add/remove and the header badge
+  // overcounts until the real total catches up.
+  var MIN_LOADER_MS = 1000;
+  var pendingProducts = {};
+  function showBtnLoader(btn, productId) {
+    if (productId) pendingProducts[productId] = true;
+
+    var siblings = productId ? document.querySelectorAll('[data-wl-product="' + productId + '"]') : [btn];
+    for (var i = 0; i < siblings.length; i++) {
+      var el = siblings[i];
+      // The native disabled attribute, not just a CSS style: this is the
+      // one thing the browser itself guarantees blocks a click outright
+      // (mouse, touch, keyboard, programmatic), unlike pointer-events,
+      // which only affects pointer/hover interaction and can still let a
+      // click through depending on timing.
+      el.disabled = true;
+      el.style.pointerEvents = "none";
+      el.style.cursor = "default";
+      el.style.opacity = el === btn ? "0.45" : "0.6";
+    }
+
+    var savedIconHtml = btn.innerHTML;
+    btn.setAttribute("data-wl-saved-icon", savedIconHtml);
+    btn.innerHTML =
+      '<span class="wl-c-spinner"><svg width="' + Math.round(ICON_SIZE * 0.45) + '" height="' + Math.round(ICON_SIZE * 0.45) +
+      '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">' +
+      '<circle cx="12" cy="12" r="9" stroke-opacity="0.25"/><path d="M21 12a9 9 0 0 0-9-9"/></svg></span>';
+    return Date.now();
+  }
+  // onDone, if given, is responsible for leaving the button in its final
+  // state (usually via syncButtons, which also updates every other copy of
+  // this heart on the page). Without it, the button just reverts to
+  // whatever icon it had before the loader started (the failure case).
+  function hideBtnLoader(btn, productId, startedAt, onDone) {
+    var elapsed = Date.now() - startedAt;
+    var wait = Math.max(0, MIN_LOADER_MS - elapsed);
+    setTimeout(function () {
+      if (productId) delete pendingProducts[productId];
+
+      var siblings = productId ? document.querySelectorAll('[data-wl-product="' + productId + '"]') : [btn];
+      for (var i = 0; i < siblings.length; i++) {
+        siblings[i].disabled = false;
+        siblings[i].style.pointerEvents = "";
+        siblings[i].style.cursor = "";
+        siblings[i].style.opacity = "";
+      }
+
+      var savedIcon = btn.getAttribute("data-wl-saved-icon");
+      btn.removeAttribute("data-wl-saved-icon");
+      if (onDone) {
+        onDone();
+      } else if (savedIcon != null) {
+        btn.innerHTML = savedIcon;
+      }
+    }, wait);
   }
 
   var svgPaths = {
@@ -485,76 +559,91 @@
   }
 
   function toggleWishlist(btn, productId) {
+    // Blocks a second click on ANY copy of this product's heart (same
+    // product shown in more than one place on the page) while the first
+    // click is still being looked up or sent -- see showBtnLoader.
+    if (pendingProducts[productId]) return;
+
     if (btn.classList.contains("active")) {
       removeFromWishlist(btn, productId);
       return;
     }
 
     // Look up the product's variants first: one variant adds straight away,
-    // several open a small popup so the shopper picks the exact one.
+    // several open a small popup so the shopper picks the exact one. Locked
+    // the same way as the actual add/remove request below, so a rapid
+    // second click during this lookup can't sneak through either.
+    pendingProducts[productId] = true;
+    btn.disabled = true;
     btn.style.opacity = "0.5";
     btn.style.pointerEvents = "none";
     getProductJson(btn.getAttribute("data-wl-handle")).then(function (product) {
-      btn.style.opacity = "";
-      btn.style.pointerEvents = "";
       var variants = product && product.variants ? product.variants : [];
       if (variants.length > 1) {
+        // The chooser popup itself prevents further clicks on the card
+        // while it's open; release the lock so canceling it doesn't leave
+        // the heart stuck disabled.
+        delete pendingProducts[productId];
+        btn.disabled = false;
+        btn.style.opacity = "";
+        btn.style.pointerEvents = "";
         openVariantChooser(product, function (variant) { addToWishlist(btn, productId, String(variant.id)); });
       } else {
+        // addToWishlist's own showBtnLoader takes over the lock from here.
+        btn.style.opacity = "";
         addToWishlist(btn, productId, variants[0] ? String(variants[0].id) : undefined);
       }
     });
   }
 
   function addToWishlist(btn, productId, variantId) {
-    btn.classList.add("wl-c-clicked");
-
-    var rp1 = document.createElement("span");
-    rp1.className = "wl-c-ripple";
-    btn.appendChild(rp1);
-    rp1.addEventListener("animationend", function () { rp1.remove(); });
-
-    var rp2 = document.createElement("span");
-    rp2.className = "wl-c-ripple2";
-    btn.appendChild(rp2);
-    rp2.addEventListener("animationend", function () { rp2.remove(); });
-
-    var fh = document.createElement("span");
-    fh.className = "wl-c-float";
-    fh.textContent = "♥";
-    fh.style.color = ACTIVE_COLOR;
-    btn.appendChild(fh);
-    fh.addEventListener("animationend", function () { fh.remove(); });
-
-    setTimeout(function () { btn.classList.remove("wl-c-clicked"); }, 750);
-
-    btn.style.opacity = "0.5";
-    btn.style.pointerEvents = "none";
+    var startedAt = showBtnLoader(btn, productId);
 
     postWishlist(productId, variantId, "add")
       .then(function (res) {
         if (res.ok) {
           wishlistedIds.add(productId);
           wishlistRows.push({ productId: productId, variantId: variantId || null });
-          syncButtons(productId, true);
-          updateHeaderBadge(1);
-          toastForButton(btn, "add");
         } else {
           console.warn("[WishKeeper] add failed, status:", res.status);
         }
+        if (!res.ok) {
+          hideBtnLoader(btn, productId, startedAt);
+          return;
+        }
+        hideBtnLoader(btn, productId, startedAt, function () {
+          syncButtons(productId, true);
+          updateHeaderBadge(1);
+          toastForButton(btn, "add");
+
+          var rp1 = document.createElement("span");
+          rp1.className = "wl-c-ripple";
+          btn.appendChild(rp1);
+          rp1.addEventListener("animationend", function () { rp1.remove(); });
+
+          var rp2 = document.createElement("span");
+          rp2.className = "wl-c-ripple2";
+          btn.appendChild(rp2);
+          rp2.addEventListener("animationend", function () { rp2.remove(); });
+
+          var fh = document.createElement("span");
+          fh.className = "wl-c-float";
+          fh.textContent = "♥";
+          fh.style.color = ACTIVE_COLOR;
+          btn.appendChild(fh);
+          fh.addEventListener("animationend", function () { fh.remove(); });
+        });
       })
-      .catch(function (err) { console.warn("[WishKeeper] add request error:", err); })
-      .finally(function () {
-        btn.style.opacity = "";
-        btn.style.pointerEvents = "";
+      .catch(function (err) {
+        console.warn("[WishKeeper] add request error:", err);
+        hideBtnLoader(btn, productId, startedAt);
       });
   }
 
   // Removing takes out every saved variant of the product, one request each,
   // so nothing is left behind.
   function removeFromWishlist(btn, productId) {
-    btn.style.opacity = "0.5";
-    btn.style.pointerEvents = "none";
+    var startedAt = showBtnLoader(btn, productId);
 
     var rows = wishlistRows.filter(function (r) { return String(r.productId) === String(productId); });
     var variantIds = rows.length ? rows.map(function (r) { return r.variantId || null; }) : [undefined];
@@ -562,18 +651,20 @@
     Promise.all(variantIds.map(function (vid) { return postWishlist(productId, vid, "remove"); }))
       .then(function (responses) {
         var allOk = responses.every(function (r) { return r.ok; });
-        if (!allOk) { console.warn("[WishKeeper] remove failed:", responses.map(function (r) { return r.status; })); return; }
+        if (!allOk) {
+          console.warn("[WishKeeper] remove failed:", responses.map(function (r) { return r.status; }));
+          hideBtnLoader(btn, productId, startedAt);
+          return;
+        }
         wishlistedIds.delete(productId);
         wishlistRows = wishlistRows.filter(function (r) { return String(r.productId) !== String(productId); });
-        syncButtons(productId, false);
-        updateHeaderBadge(-variantIds.length);
-        toastForButton(btn, "remove");
+        hideBtnLoader(btn, productId, startedAt, function () {
+          syncButtons(productId, false);
+          updateHeaderBadge(-variantIds.length);
+          toastForButton(btn, "remove");
+        });
       })
-      .catch(function () { })
-      .finally(function () {
-        btn.style.opacity = "";
-        btn.style.pointerEvents = "";
-      });
+      .catch(function () { hideBtnLoader(btn, productId, startedAt); });
   }
 
   function syncButtons(productId, isActive) {

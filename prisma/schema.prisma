@@ -65,6 +65,14 @@ model StoreSettings {
   customIconSvg     String? @db.Text
   customIconColor   String  @default("#e74c6f")
 
+  // The product-page "Add to Wishlist" button: show the icon with custom
+  // wording, or icon only. When icon-only, buttonIconPosition controls
+  // which side of the button's own space the icon sits on. Replaces the old
+  // per-block "Button style" theme editor setting, now controlled here.
+  buttonDisplayMode  String @default("text")
+  buttonText         String @default("Add to Wishlist")
+  buttonIconPosition String @default("left")
+
   wishlistDisplayMode String @default("page")
 
   customWishlistButtonHtml String? @db.Text

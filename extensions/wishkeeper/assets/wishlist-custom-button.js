@@ -37,6 +37,14 @@
       '<button style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:0;line-height:1;flex-shrink:0;pointer-events:all;margin-left:4px;" onclick="(function(el){el.style.opacity=\'0\';el.style.transform=\'translateX(-20px)\';setTimeout(function(){el.remove();},350);})(this.parentNode)">✕</button>';
 
     tc.appendChild(toast);
+
+    // Never more than 3 stacked at once -- drop the oldest immediately
+    // instead of letting them pile up from repeated clicks.
+    var MAX_TOASTS = 3;
+    while (tc.children.length > MAX_TOASTS) {
+      tc.removeChild(tc.firstElementChild);
+    }
+
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
         toast.style.opacity = "1";
@@ -47,7 +55,7 @@
       toast.style.opacity = "0";
       toast.style.transform = "translateX(-20px)";
       setTimeout(function () { toast.remove(); }, 350);
-    }, 4000);
+    }, 1500);
   }
 
   // Given a pasted HTML snippet, figure out how to find that same element on

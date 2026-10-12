@@ -1,34 +1,38 @@
-name = "Wishkeeper Backup"
-client_id = "a0032733c2a179b99f867dafa839c96e"
-application_url = "https://consent-inspired-renewable-benjamin.trycloudflare.com"
-embedded = true
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-[build]
-automatically_update_urls_on_dev = true
+client_id = "a0032733c2a179b99f867dafa839c96e"
+name = "Wishkeeper Backup"
+application_url = "https://concepts-beaver-indianapolis-perspectives.trycloudflare.com"
+embedded = true
 
 [webhooks]
 api_version = "2026-07"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
 
   [[webhooks.subscriptions]]
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
   [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/webhooks/app/uninstalled"
+  topics = [ "products/update" ]
+  uri = "/webhooks/products/update"
 
 [access_scopes]
-scopes = "write_metaobject_definitions,write_metaobjects,write_products,unauthenticated_read_product_listings,read_customers,read_themes"
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_customers,unauthenticated_read_product_listings,write_metaobject_definitions,write_metaobjects,write_products"
 optional_scopes = [ ]
 use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [
-  "https://consent-inspired-renewable-benjamin.trycloudflare.com/auth/callback"
+  "https://concepts-beaver-indianapolis-perspectives.trycloudflare.com/auth/callback"
 ]
 
 [app_proxy]
-url = "https://consent-inspired-renewable-benjamin.trycloudflare.com"
+url = "https://concepts-beaver-indianapolis-perspectives.trycloudflare.com"
 subpath = "wishlist"
 prefix = "apps"
 

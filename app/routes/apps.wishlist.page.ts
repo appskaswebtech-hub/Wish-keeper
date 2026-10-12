@@ -788,6 +788,23 @@
             btnEl.classList.add('added');
           } else {
             console.error('Cart add failed', xhr.status, xhr.responseText);
+            // 422 from /cart/add.js means Shopify itself refused this exact
+            // variant (sold out, no longer available, etc). Show it as
+            // unavailable right on the card instead of just a generic error
+            // that clears itself and invites clicking the same dead button
+            // again.
+            if (xhr.status === 422) {
+              btnEl.textContent = T.soldOut;
+              btnEl.disabled = true;
+              if (card && !card.querySelector('.wl-badge-oos')) {
+                var badge = document.createElement('span');
+                badge.className = 'wl-badge-oos';
+                badge.textContent = T.soldOut;
+                var imgWrap = card.querySelector('.wl-card-img-wrap');
+                if (imgWrap) imgWrap.appendChild(badge);
+              }
+              return;
+            }
             btnEl.textContent = T.error;
           }
           setTimeout(function () {

@@ -136,6 +136,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         };
       }
 
+      // A variantId was saved but that exact variant didn't come back from
+      // Shopify (deleted, hidden, etc). Falling back to the product's own
+      // first-variant availability here would be wrong: that's a DIFFERENT
+      // variant, so it tells us nothing about whether the one actually saved
+      // can still be added to cart. Show it as unavailable instead of
+      // guessing -- this is what let a sold-out/missing variant keep
+      // showing an active "Add to Cart" that then failed with a 422.
+      const savedVariantMissing = !!variantGid && !variant;
+
       return {
         id: item.id,
         productId: item.productId,
@@ -150,7 +159,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
               imageAlt: product.featuredImage?.altText || product.title,
               price: product.priceRange?.minVariantPrice?.amount || "0",
               currency: product.priceRange?.minVariantPrice?.currencyCode || "USD",
-              available: product.variants?.edges?.[0]?.node?.availableForSale ?? true,
+              available: savedVariantMissing
+                ? false
+                : product.variants?.edges?.[0]?.node?.availableForSale ?? true,
               variantTitle: null,
               selectedOptions: null,
             }

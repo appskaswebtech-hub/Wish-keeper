@@ -175,6 +175,9 @@ model SupportThread {
   // a "Seen" receipt under the admin's most recent message.
   shopLastReadAt   DateTime?
   adminLastReadAt  DateTime?
+  // Set when an admin closes the conversation from the dashboard; cleared
+  // the next time the merchant sends a message (auto-reopen).
+  closedAt         DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   messages         SupportMessage[]

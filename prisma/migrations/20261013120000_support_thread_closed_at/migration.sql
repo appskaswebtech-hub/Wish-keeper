@@ -1,0 +1,1 @@
+ALTER TABLE `SupportThread` ADD COLUMN `closedAt` DATETIME(3) NULL;

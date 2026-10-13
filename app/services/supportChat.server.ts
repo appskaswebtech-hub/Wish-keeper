@@ -104,7 +104,7 @@ export async function sendMessage(opts: {
     where: { id: thread.id },
     data:
       opts.sender === "shop"
-        ? { adminUnreadCount: { increment: 1 } }
+        ? { adminUnreadCount: { increment: 1 }, closedAt: null } // merchant replying re-opens a closed thread
         : { shopUnreadCount: { increment: 1 } },
   });
 

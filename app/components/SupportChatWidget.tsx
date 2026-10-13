@@ -61,6 +61,7 @@ export default function SupportChatWidget() {
   const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastTypingSentAt = useRef(0);
+  const wasClosedRef = useRef(false);
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -76,6 +77,7 @@ export default function SupportChatWidget() {
         if (d?.messages) {
           setMessages(d.messages);
           setLoaded(true);
+          wasClosedRef.current = Boolean(d.thread?.closedAt);
           scrollToBottom();
         }
       })
@@ -110,6 +112,15 @@ export default function SupportChatWidget() {
             }
             return [...prev, ...fresh];
           });
+
+          // Admin closed the conversation from the dashboard -- collapse the
+          // panel back to just the floating icon, same as the merchant
+          // closing it themselves. Only fires on the open -> closed edge, so
+          // it doesn't keep fighting the merchant if they reopen it to send
+          // a follow-up (which also clears closedAt server-side).
+          const isClosed = Boolean(d.thread?.closedAt);
+          if (isClosed && !wasClosedRef.current) setOpen(false);
+          wasClosedRef.current = isClosed;
         })
         .catch(() => {});
     }, 4000);

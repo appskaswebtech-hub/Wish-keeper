@@ -60,8 +60,6 @@ export default function SupportChatWidget() {
   const [err, setErr] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [adminTyping, setAdminTyping] = useState(false);
-  const typingHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSentAt = useRef(0);
 
   const scrollToBottom = useCallback(() => {
@@ -84,77 +82,38 @@ export default function SupportChatWidget() {
       .catch(() => {});
   }, [scrollToBottom]);
 
-  // Live updates over a real WebSocket -- no polling. Browser EventSource
-  // can't carry Shopify's session-token auth header the way fetch() does,
-  // so we get a short-lived ticket over a normal authenticated fetch first
-  // (same as before) and connect with that instead (see
-  // app.support.ticket.ts). The ticket is refreshed periodically so a
-  // long-open tab reconnects with a fresh one rather than ever hitting an
-  // expired one.
+  // Live updates via polling. A raw WebSocket was tried here before, but it
+  // only ever worked in local dev (it rode on a dev-only Vite plugin -- the
+  // production server has no equivalent upgrade handler), so on the live
+  // site it just reconnected forever and spammed the server log with 404s
+  // while never actually delivering anything. Admin replies are already
+  // persisted to the DB the instant they're sent (see
+  // app.support.internal-notify.ts), so a short poll of the same endpoint
+  // used for the initial load picks them up with at most a few seconds'
+  // delay -- in practice indistinguishable from "live" for a chat widget,
+  // and it works identically in every environment with zero server setup.
   useEffect(() => {
-    let socket: WebSocket | null = null;
-    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
-    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-    let cancelled = false;
-
-    function handlePayload(raw: string) {
-      try {
-        const payload = JSON.parse(raw);
-        if (payload.type === "typing" && payload.sender === "admin") {
-          setAdminTyping(true);
-          if (typingHideTimer.current) clearTimeout(typingHideTimer.current);
-          typingHideTimer.current = setTimeout(() => setAdminTyping(false), 3000);
-          return;
-        }
-        if (payload.type === "message" && payload.message) {
-          setAdminTyping(false);
-          if (typingHideTimer.current) clearTimeout(typingHideTimer.current);
-          setMessages((prev) =>
-            prev.some((m) => m.id === payload.message.id) ? prev : [...prev, payload.message]
-          );
-          if (payload.message.sender === "admin") {
-            setUnread((n) => (open ? 0 : n + 1));
-          }
-          scrollToBottom();
-        }
-      } catch {
-        // Ignore malformed frames.
-      }
-    }
-
-    function connect() {
-      fetch("/app/support/ticket", { method: "POST" })
+    const interval = setInterval(() => {
+      fetch("/app/support/messages")
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => {
-          if (cancelled || !d?.ticket) return;
-          if (socket) socket.close();
-          const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-          socket = new WebSocket(`${proto}//${window.location.host}/app/support/ws?ticket=${encodeURIComponent(d.ticket)}`);
-          socket.onmessage = (ev) => handlePayload(ev.data);
-          socket.onclose = () => {
-            if (cancelled) return;
-            // Dropped connection: reconnect with a fresh ticket shortly.
-            reconnectTimer = setTimeout(connect, 3000);
-          };
-          // Get a fresh ticket and reconnect well before the 20-minute ticket expires.
-          refreshTimer = setTimeout(connect, 15 * 60 * 1000);
+          if (!d?.messages) return;
+          setMessages((prev) => {
+            const prevIds = new Set(prev.map((m: Message) => m.id));
+            const incoming: Message[] = d.messages;
+            const fresh = incoming.filter((m) => !prevIds.has(m.id));
+            if (fresh.length === 0) return prev;
+            const adminFresh = fresh.filter((m) => m.sender === "admin");
+            if (adminFresh.length > 0) {
+              setUnread((n) => (open ? 0 : n + adminFresh.length));
+              scrollToBottom();
+            }
+            return [...prev, ...fresh];
+          });
         })
-        .catch(() => {
-          // Couldn't get a ticket (offline, etc.); try again shortly.
-          if (!cancelled) refreshTimer = setTimeout(connect, 10000);
-        });
-    }
-
-    connect();
-    return () => {
-      cancelled = true;
-      if (refreshTimer) clearTimeout(refreshTimer);
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      if (socket) {
-        socket.onclose = null;
-        socket.close();
-      }
-    };
+        .catch(() => {});
+    }, 4000);
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -255,11 +214,6 @@ export default function SupportChatWidget() {
                 </div>
               </div>
             ))}
-            {adminTyping && (
-              <div className="wksc-row wksc-row--admin">
-                <div className="wksc-bubble wksc-typing">typing...</div>
-              </div>
-            )}
           </div>
 
           <div className="wksc-foot">

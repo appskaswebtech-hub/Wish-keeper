@@ -82,6 +82,9 @@ export async function sendMessage(opts: {
   if (!body && !opts.file) {
     throw new Error("Write a message or attach a file.");
   }
+  if (opts.sender === "shop" && thread.closedAt) {
+    throw new Error("This conversation is closed.");
+  }
 
   let attachment: Awaited<ReturnType<typeof saveAttachment>> | null = null;
   if (opts.file && opts.file.size > 0) {
@@ -104,8 +107,8 @@ export async function sendMessage(opts: {
     where: { id: thread.id },
     data:
       opts.sender === "shop"
-        ? { adminUnreadCount: { increment: 1 }, closedAt: null } // merchant replying re-opens a closed thread
-        : { shopUnreadCount: { increment: 1 } },
+        ? { adminUnreadCount: { increment: 1 } }
+        : { shopUnreadCount: { increment: 1 }, closedAt: null }, // admin replying re-opens a closed thread
   });
 
   const payload = { type: "message", message };

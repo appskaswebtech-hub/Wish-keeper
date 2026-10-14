@@ -43,6 +43,8 @@ const WIDGET_CSS = `
 .wksc-sendbtn{width:34px;height:34px;flex-shrink:0;border-radius:10px;border:none;background:#b8922a;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .wksc-sendbtn:disabled{opacity:.5;cursor:not-allowed}
 .wksc-err{font-size:11.5px;color:#dc2626;margin-bottom:6px}
+.wksc-closed-note{font-size:11.5px;color:#9ca3af;margin-bottom:8px;text-align:center}
+.wksc-textarea:disabled,.wksc-iconbtn:disabled{opacity:.55;cursor:not-allowed}
 .wksc-typing{font-style:italic;opacity:.65}
 `;
 
@@ -61,7 +63,7 @@ export default function SupportChatWidget() {
   const listRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastTypingSentAt = useRef(0);
-  const wasClosedRef = useRef(false);
+  const [closed, setClosed] = useState(false);
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -77,7 +79,7 @@ export default function SupportChatWidget() {
         if (d?.messages) {
           setMessages(d.messages);
           setLoaded(true);
-          wasClosedRef.current = Boolean(d.thread?.closedAt);
+          setClosed(Boolean(d.thread?.closedAt));
           scrollToBottom();
         }
       })
@@ -113,14 +115,15 @@ export default function SupportChatWidget() {
             return [...prev, ...fresh];
           });
 
-          // Admin closed the conversation from the dashboard -- collapse the
-          // panel back to just the floating icon, same as the merchant
-          // closing it themselves. Only fires on the open -> closed edge, so
-          // it doesn't keep fighting the merchant if they reopen it to send
-          // a follow-up (which also clears closedAt server-side).
+          // Admin closed the conversation from the dashboard -- reflect that
+          // here: collapse an open panel back to the floating icon and lock
+          // the input so nothing more can be sent, until the admin replies
+          // again (which re-opens it server-side).
           const isClosed = Boolean(d.thread?.closedAt);
-          if (isClosed && !wasClosedRef.current) setOpen(false);
-          wasClosedRef.current = isClosed;
+          setClosed((wasClosed) => {
+            if (isClosed && !wasClosed) setOpen(false);
+            return isClosed;
+          });
         })
         .catch(() => {});
     }, 4000);
@@ -228,6 +231,7 @@ export default function SupportChatWidget() {
           </div>
 
           <div className="wksc-foot">
+            {closed && <div className="wksc-closed-note">This conversation was closed by support.</div>}
             {err && <div className="wksc-err">{err}</div>}
             {file && (
               <div className="wksc-filechip">
@@ -244,14 +248,15 @@ export default function SupportChatWidget() {
                 style={{ display: "none" }}
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
               />
-              <button type="button" className="wksc-iconbtn" onClick={() => fileInputRef.current?.click()} aria-label="Attach a file">
+              <button type="button" className="wksc-iconbtn" onClick={() => fileInputRef.current?.click()} aria-label="Attach a file" disabled={closed}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
               </button>
               <textarea
                 className="wksc-textarea"
                 rows={1}
-                placeholder="Type a message..."
+                placeholder={closed ? "This conversation is closed" : "Type a message..."}
                 value={text}
+                disabled={closed}
                 onChange={(e) => {
                   setText(e.target.value);
                   const now = Date.now();
@@ -262,7 +267,7 @@ export default function SupportChatWidget() {
                 }}
                 onKeyDown={onKeyDown}
               />
-              <button type="button" className="wksc-sendbtn" onClick={send} disabled={sending || (!text.trim() && !file)} aria-label="Send">
+              <button type="button" className="wksc-sendbtn" onClick={send} disabled={closed || sending || (!text.trim() && !file)} aria-label="Send">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
               </button>
             </div>

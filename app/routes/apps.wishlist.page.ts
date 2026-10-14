@@ -462,7 +462,7 @@
         '<h2>' + T.emptyTitle + '</h2>' +
         '<p>' + T.emptyText + '</p>' +
         (isGuestCustomer ? '<p class="wl-empty-signin">' + T.signInHint + '</p>' : '') +
-        '<a href="/collections/all" class="wl-empty-cta">' + T.startShopping + '</a>' +
+        '<a href="/" class="wl-empty-cta">' + T.startShopping + '</a>' +
         '</div>';
     }
 

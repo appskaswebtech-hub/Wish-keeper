@@ -184,6 +184,22 @@ export async function reopenThread(shop: string) {
     where: { id: thread.id },
     data: { closedAt: null, lastResetAt: new Date() },
   });
+  // The dashboard still shows the full mirrored history (nothing's deleted
+  // on its side), so without a marker a fresh chat just looks like the same
+  // conversation continuing. Best-effort, same as every other dashboard
+  // notification in this file.
+  notifyAdminDashboardReset(shop).catch(() => {});
+}
+
+async function notifyAdminDashboardReset(shop: string) {
+  const url = process.env.ADMIN_DASHBOARD_URL;
+  const secret = process.env.SUPPORT_INTERNAL_SECRET;
+  if (!url || !secret) return;
+  await fetch(`${url.replace(/\/$/, "")}/internal/notify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Internal-Secret": secret },
+    body: JSON.stringify({ shop, type: "reset" }),
+  });
 }
 
 async function notifyAdminDashboard(shop: string, message: unknown) {

@@ -3,6 +3,11 @@ import path from "node:path";
 import crypto from "node:crypto";
 import prisma from "../db.server";
 import { publish, ADMIN_CHANNEL } from "./supportBus.server";
+import { sendAlertEmail } from "./mailer.server";
+
+const SUPPORT_NOTIFY_EMAIL = "apps.kaswebtech@gmail.com";
+const AUTO_REPLY_TEXT =
+  "Thanks for reaching out! A support agent will be with you shortly -- feel free to add more detail in the meantime.";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "support");
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB
@@ -89,6 +94,19 @@ export async function sendMessage(opts: {
     throw new Error("This conversation is closed.");
   }
 
+  // Whether this is the first message of a fresh conversation (brand new
+  // thread, or the first one since a "Start new chat" reset) -- used to
+  // decide whether this needs the admin-notify email + auto-reply below,
+  // so an ongoing back-and-forth doesn't spam either.
+  const isConversationStart =
+    opts.sender === "shop" &&
+    (await prisma.supportMessage.count({
+      where: {
+        threadId: thread.id,
+        ...(thread.lastResetAt ? { createdAt: { gt: thread.lastResetAt } } : {}),
+      },
+    })) === 0;
+
   let attachment: Awaited<ReturnType<typeof saveAttachment>> | null = null;
   if (opts.file && opts.file.size > 0) {
     attachment = await saveAttachment(opts.file, thread.id);
@@ -128,7 +146,31 @@ export async function sendMessage(opts: {
     notifyAdminDashboard(opts.shop, message).catch(() => {});
   }
 
+  if (isConversationStart) {
+    notifySupportInbox(opts.shop, body || "(attachment)").catch(() => {});
+    // Reassures the merchant immediately instead of leaving a silent gap
+    // before a human actually replies. A real row in the same table, so the
+    // widget's existing poll picks it up like any other message -- not sent
+    // through notifyAdminDashboard, since it's a local auto-reply, not an
+    // actual admin reply that should show up in the Supportly inbox.
+    await prisma.supportMessage.create({
+      data: { threadId: thread.id, sender: "admin", body: AUTO_REPLY_TEXT },
+    });
+  }
+
   return message;
+}
+
+async function notifySupportInbox(shop: string, firstMessage: string) {
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  await sendAlertEmail(
+    null,
+    SUPPORT_NOTIFY_EMAIL,
+    `New support chat from ${shop}`,
+    `<p>A merchant started a new support conversation.</p>
+     <p><strong>Shop:</strong> ${esc(shop)}</p>
+     <p><strong>Message:</strong> ${esc(firstMessage)}</p>`
+  );
 }
 
 export async function closeThread(shop: string) {

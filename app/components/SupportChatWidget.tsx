@@ -196,7 +196,13 @@ export default function SupportChatWidget() {
     if (starting) return;
     setStarting(true);
     fetch("/app/support/reopen", { method: "POST" })
-      .then(() => setClosed(false))
+      .then(() => {
+        // Server hides everything before this point from now on (old
+        // history stays intact for the admin) -- clear it here too so the
+        // widget doesn't wait for the next poll to look fresh.
+        setMessages([]);
+        setClosed(false);
+      })
       .catch(() => {})
       .finally(() => setStarting(false));
   }, [starting]);

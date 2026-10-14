@@ -1,0 +1,1 @@
+ALTER TABLE `SupportThread` ADD COLUMN `lastResetAt` DATETIME(3) NULL;

@@ -25,7 +25,10 @@ export async function getOrCreateThread(shop: string) {
 export async function getMessages(shop: string, limit = 100) {
   const thread = await getOrCreateThread(shop);
   const messages = await prisma.supportMessage.findMany({
-    where: { threadId: thread.id },
+    where: {
+      threadId: thread.id,
+      ...(thread.lastResetAt ? { createdAt: { gt: thread.lastResetAt } } : {}),
+    },
     orderBy: { createdAt: "asc" },
     take: limit,
   });
@@ -135,7 +138,10 @@ export async function closeThread(shop: string) {
 
 export async function reopenThread(shop: string) {
   const thread = await getOrCreateThread(shop);
-  await prisma.supportThread.update({ where: { id: thread.id }, data: { closedAt: null } });
+  await prisma.supportThread.update({
+    where: { id: thread.id },
+    data: { closedAt: null, lastResetAt: new Date() },
+  });
 }
 
 async function notifyAdminDashboard(shop: string, message: unknown) {

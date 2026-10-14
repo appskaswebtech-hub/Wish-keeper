@@ -182,6 +182,11 @@ model SupportThread {
   // the widget treats it as "typing" for a few seconds after this timestamp
   // since there's no live push channel to clear it explicitly.
   adminTypingAt    DateTime?
+  // Set when the merchant clicks "Start new chat" after a closed thread.
+  // Older messages stay in the database (the admin dashboard always shows
+  // full history) but are hidden from the merchant's own widget from this
+  // point on, so it reads like a genuinely fresh conversation.
+  lastResetAt      DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   messages         SupportMessage[]

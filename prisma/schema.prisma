@@ -178,6 +178,10 @@ model SupportThread {
   // Set when an admin closes the conversation from the dashboard; cleared
   // the next time the merchant sends a message (auto-reopen).
   closedAt         DateTime?
+  // Set by the Chat Agent backend whenever an admin types in the dashboard;
+  // the widget treats it as "typing" for a few seconds after this timestamp
+  // since there's no live push channel to clear it explicitly.
+  adminTypingAt    DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   messages         SupportMessage[]

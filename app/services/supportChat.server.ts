@@ -128,6 +128,16 @@ export async function sendMessage(opts: {
   return message;
 }
 
+export async function closeThread(shop: string) {
+  const thread = await getOrCreateThread(shop);
+  await prisma.supportThread.update({ where: { id: thread.id }, data: { closedAt: new Date() } });
+}
+
+export async function reopenThread(shop: string) {
+  const thread = await getOrCreateThread(shop);
+  await prisma.supportThread.update({ where: { id: thread.id }, data: { closedAt: null } });
+}
+
 async function notifyAdminDashboard(shop: string, message: unknown) {
   const url = process.env.ADMIN_DASHBOARD_URL;
   const secret = process.env.SUPPORT_INTERNAL_SECRET;

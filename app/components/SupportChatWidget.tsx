@@ -20,6 +20,10 @@ const WIDGET_CSS = `
 .wksc-head-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0}
 .wksc-head-close{background:none;border:none;color:#fff;opacity:.75;cursor:pointer;padding:4px;display:flex}
 .wksc-head-close:hover{opacity:1}
+.wksc-head-actions{display:flex;align-items:center;gap:10px}
+.wksc-head-end{background:none;border:1px solid rgba(255,255,255,0.3);color:#fff;opacity:.85;cursor:pointer;font-size:11px;font-weight:600;padding:4px 9px;border-radius:7px}
+.wksc-head-end:hover{opacity:1;border-color:#fff}
+.wksc-head-end:disabled{opacity:.5;cursor:not-allowed}
 .wksc-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#faf8f4}
 .wksc-empty{margin:auto;text-align:center;color:#9ca3af;font-size:12.5px;padding:0 20px}
 .wksc-row{display:block;text-align:left;clear:both}
@@ -43,8 +47,10 @@ const WIDGET_CSS = `
 .wksc-sendbtn{width:34px;height:34px;flex-shrink:0;border-radius:10px;border:none;background:#b8922a;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .wksc-sendbtn:disabled{opacity:.5;cursor:not-allowed}
 .wksc-err{font-size:11.5px;color:#dc2626;margin-bottom:6px}
-.wksc-closed-note{font-size:11.5px;color:#9ca3af;margin-bottom:8px;text-align:center}
-.wksc-textarea:disabled,.wksc-iconbtn:disabled{opacity:.55;cursor:not-allowed}
+.wksc-closed-row{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 0}
+.wksc-closed-note{font-size:11.5px;color:#9ca3af;text-align:center}
+.wksc-newchat-btn{background:#b8922a;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:12.5px;font-weight:700;cursor:pointer}
+.wksc-newchat-btn:disabled{opacity:.6;cursor:not-allowed}
 .wksc-typing{font-style:italic;opacity:.65}
 `;
 
@@ -64,6 +70,9 @@ export default function SupportChatWidget() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastTypingSentAt = useRef(0);
   const [closed, setClosed] = useState(false);
+  const [adminTyping, setAdminTyping] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const [starting, setStarting] = useState(false);
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -110,8 +119,8 @@ export default function SupportChatWidget() {
             const adminFresh = fresh.filter((m) => m.sender === "admin");
             if (adminFresh.length > 0) {
               setUnread((n) => (open ? 0 : n + adminFresh.length));
-              scrollToBottom();
             }
+            scrollToBottom();
             return [...prev, ...fresh];
           });
 
@@ -124,6 +133,12 @@ export default function SupportChatWidget() {
             if (isClosed && !wasClosed) setOpen(false);
             return isClosed;
           });
+
+          // No live channel to clear this explicitly, so a recent timestamp
+          // is treated as "still typing" -- generous enough (two poll
+          // cycles) to survive the gap between polls without flickering.
+          const typingAt = d.thread?.adminTypingAt ? new Date(d.thread.adminTypingAt).getTime() : 0;
+          setAdminTyping(typingAt > 0 && Date.now() - typingAt < 8000);
         })
         .catch(() => {});
     }, 4000);
@@ -165,6 +180,27 @@ export default function SupportChatWidget() {
       .finally(() => setSending(false));
   }, [text, file, sending, scrollToBottom]);
 
+  const endChat = useCallback(() => {
+    if (ending) return;
+    setEnding(true);
+    fetch("/app/support/close", { method: "POST" })
+      .then(() => {
+        setClosed(true);
+        setOpen(false);
+      })
+      .catch(() => {})
+      .finally(() => setEnding(false));
+  }, [ending]);
+
+  const startNewChat = useCallback(() => {
+    if (starting) return;
+    setStarting(true);
+    fetch("/app/support/reopen", { method: "POST" })
+      .then(() => setClosed(false))
+      .catch(() => {})
+      .finally(() => setStarting(false));
+  }, [starting]);
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -192,11 +228,18 @@ export default function SupportChatWidget() {
               <span className="wksc-head-dot" />
               Chat with WishKeeper
             </div>
-            <button className="wksc-head-close" onClick={() => setOpen(false)} aria-label="Close chat">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
+            <div className="wksc-head-actions">
+              {!closed && messages.length > 0 && (
+                <button type="button" className="wksc-head-end" onClick={endChat} disabled={ending}>
+                  End chat
+                </button>
+              )}
+              <button className="wksc-head-close" onClick={() => setOpen(false)} aria-label="Close chat">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <div className="wksc-body" ref={listRef}>
@@ -228,49 +271,63 @@ export default function SupportChatWidget() {
                 </div>
               </div>
             ))}
+            {adminTyping && !closed && (
+              <div className="wksc-row wksc-row--admin">
+                <div className="wksc-bubble wksc-typing">typing...</div>
+              </div>
+            )}
           </div>
 
           <div className="wksc-foot">
-            {closed && <div className="wksc-closed-note">This conversation was closed by support.</div>}
-            {err && <div className="wksc-err">{err}</div>}
-            {file && (
-              <div className="wksc-filechip">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /></svg>
-                {file.name}
-                <button type="button" onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}>×</button>
+            {closed ? (
+              <div className="wksc-closed-row">
+                <span className="wksc-closed-note">This conversation was closed by support.</span>
+                <button type="button" className="wksc-newchat-btn" onClick={startNewChat} disabled={starting}>
+                  {starting ? "Starting..." : "Start new chat"}
+                </button>
               </div>
+            ) : (
+              <>
+                {err && <div className="wksc-err">{err}</div>}
+                {file && (
+                  <div className="wksc-filechip">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /></svg>
+                    {file.name}
+                    <button type="button" onClick={() => { setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}>×</button>
+                  </div>
+                )}
+                <div className="wksc-inputrow">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx,.txt"
+                    style={{ display: "none" }}
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  />
+                  <button type="button" className="wksc-iconbtn" onClick={() => fileInputRef.current?.click()} aria-label="Attach a file">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+                  </button>
+                  <textarea
+                    className="wksc-textarea"
+                    rows={1}
+                    placeholder="Type a message..."
+                    value={text}
+                    onChange={(e) => {
+                      setText(e.target.value);
+                      const now = Date.now();
+                      if (now - lastTypingSentAt.current > 2000) {
+                        lastTypingSentAt.current = now;
+                        fetch("/app/support/typing", { method: "POST" }).catch(() => {});
+                      }
+                    }}
+                    onKeyDown={onKeyDown}
+                  />
+                  <button type="button" className="wksc-sendbtn" onClick={send} disabled={sending || (!text.trim() && !file)} aria-label="Send">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                  </button>
+                </div>
+              </>
             )}
-            <div className="wksc-inputrow">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.pdf,.doc,.docx,.txt"
-                style={{ display: "none" }}
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
-              <button type="button" className="wksc-iconbtn" onClick={() => fileInputRef.current?.click()} aria-label="Attach a file" disabled={closed}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
-              </button>
-              <textarea
-                className="wksc-textarea"
-                rows={1}
-                placeholder={closed ? "This conversation is closed" : "Type a message..."}
-                value={text}
-                disabled={closed}
-                onChange={(e) => {
-                  setText(e.target.value);
-                  const now = Date.now();
-                  if (now - lastTypingSentAt.current > 2000) {
-                    lastTypingSentAt.current = now;
-                    fetch("/app/support/typing", { method: "POST" }).catch(() => {});
-                  }
-                }}
-                onKeyDown={onKeyDown}
-              />
-              <button type="button" className="wksc-sendbtn" onClick={send} disabled={closed || sending || (!text.trim() && !file)} aria-label="Send">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-              </button>
-            </div>
           </div>
         </div>
       )}

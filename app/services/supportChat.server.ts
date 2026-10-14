@@ -163,14 +163,49 @@ export async function sendMessage(opts: {
 
 async function notifySupportInbox(shop: string, firstMessage: string) {
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  await sendAlertEmail(
-    null,
-    SUPPORT_NOTIFY_EMAIL,
-    `New support chat from ${shop}`,
-    `<p>A merchant started a new support conversation.</p>
-     <p><strong>Shop:</strong> ${esc(shop)}</p>
-     <p><strong>Message:</strong> ${esc(firstMessage)}</p>`
-  );
+  const FONT = "'DM Sans', Arial, Helvetica, sans-serif";
+  const dashboardUrl = "https://supportly.kaswebtechsolutions.com/admin/";
+
+  const html = `<!doctype html>
+<html>
+<body style="margin:0;padding:0;background:#f3efe6;">
+  <span style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(shop)} just started a new support chat.</span>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3efe6;">
+    <tr><td align="center" style="padding:28px 12px;">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;">
+        <tr><td align="center" style="padding:28px 32px 8px;font-family:${FONT};font-size:14px;font-weight:800;letter-spacing:0.22em;text-transform:uppercase;color:#1a1612;">WishKeeper Support</td></tr>
+        <tr><td style="padding:18px 32px 0;font-family:${FONT};">
+          <h1 style="margin:0 0 10px;font-size:22px;line-height:1.3;color:#1a1612;font-weight:700;">New support chat started</h1>
+          <div style="font-size:14px;line-height:1.6;color:#6b6257;">A merchant just opened a new conversation and is waiting on a reply.</div>
+        </td></tr>
+        <tr><td style="padding:22px 32px 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf8f4;border-radius:12px;border:1px solid #eee4d0;">
+            <tr><td style="padding:18px 20px;font-family:${FONT};">
+              <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#a39a8e;font-weight:700;padding-bottom:4px;">Store</div>
+              <div style="font-size:15px;color:#1a1612;font-weight:600;padding-bottom:14px;">${esc(shop)}</div>
+              <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#a39a8e;font-weight:700;padding-bottom:4px;">Message</div>
+              <div style="font-size:14px;color:#1a1612;line-height:1.6;">${esc(firstMessage)}</div>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td align="center" style="padding:26px 32px 32px;">
+          <a href="${dashboardUrl}" style="display:inline-block;background:#1a1612;color:#ffffff;text-decoration:none;font-family:${FONT};font-size:13px;font-weight:700;padding:13px 28px;border-radius:100px;">Open in Support Dashboard</a>
+        </td></tr>
+        <tr><td style="padding:0 20px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#1a1612;border-radius:14px;">
+            <tr><td style="padding:18px 24px;font-family:${FONT};">
+              <div style="font-size:14px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:#d4a843;">WishKeeper</div>
+              <div style="margin-top:6px;font-size:11.5px;line-height:1.6;color:#a39a8e;">You're receiving this because a merchant messaged WishKeeper support.</div>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  await sendAlertEmail(null, SUPPORT_NOTIFY_EMAIL, `New support chat from ${shop}`, html);
 }
 
 export async function closeThread(shop: string) {

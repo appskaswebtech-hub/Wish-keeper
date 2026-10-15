@@ -549,7 +549,10 @@
 
       function syncCartBubble() {
         var cxhr = new XMLHttpRequest();
-        cxhr.open('GET', '/cart.js', true);
+        // Cache-bust: a stale cached /cart.js response was showing an old
+        // item count on the bubble even though the drawer (fetched fresh)
+        // already had the real one.
+        cxhr.open('GET', '/cart.js?_=' + Date.now(), true);
         cxhr.onreadystatechange = function () {
           if (cxhr.readyState !== 4 || cxhr.status !== 200) return;
           var cart;

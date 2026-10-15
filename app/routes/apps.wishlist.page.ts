@@ -845,36 +845,63 @@
               res.json().then(function (addResult) {
                 var sectionsHtml = addResult && addResult.sections;
 
-                // Horizon 2025+ themes: dispatch the theme's actual
-                // CartLinesUpdateEvent (from @shopify/events -- the same
-                // package cart-drawer-component and cart-items-component
-                // import and listen for). Passing detail.sections here is
-                // what lets cart-items-component morph the real item row
-                // directly instead of falling back to a self-fetch.
-                import('@shopify/events').then(function (mod) {
-                  var CartLinesUpdateEvent = mod && mod.CartLinesUpdateEvent;
-                  if (!CartLinesUpdateEvent) return;
-                  document.dispatchEvent(new CartLinesUpdateEvent({
-                    action: 'add',
-                    context: 'cart',
-                    lines: [{ id: String(variantId), quantity: 1 }],
-                    promise: Promise.resolve({
-                      detail: {
-                        sections: sectionsHtml || undefined,
-                        itemCount: addResult ? addResult.item_count : undefined,
-                        source: 'wishkeeper-wishlist',
-                        didError: false
-                      }
-                    })
-                  }));
-                }).catch(function (e) { console.error('[wl] CartLinesUpdateEvent dispatch failed', e); });
+                // /cart/add.js's response only describes the line item that
+                // was just added -- no cart-wide item_count field, unlike
+                // /cart.js. Fetched here IN PARALLEL with the @shopify/events
+                // import (Promise.all), not chained after it: chaining added
+                // a full extra network round-trip before the dispatch fired,
+                // which was late enough to break cart-items-component's
+                // section morph. Parallel keeps the dispatch exactly as fast
+                // as before while still getting a real count for cart-icon.js.
+                Promise.all([
+                  fetch('/cart.js?_=' + Date.now()).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
+                  import('@shopify/events').catch(function (e) { console.error('[wl] @shopify/events import failed', e); return null; })
+                ]).then(function (results) {
+                  var cart = results[0];
+                  var mod = results[1];
+                  var itemCount = cart ? cart.item_count : undefined;
 
-                // Non-Horizon themes: generic event some other themes listen
-                // for. Fully decoupled from the dispatch above.
-                document.dispatchEvent(new CustomEvent('cart:update', {
-                  bubbles: true,
-                  detail: { data: { itemCount: addResult ? addResult.item_count : undefined, source: 'wishkeeper-wishlist' } }
-                }));
+                  // Horizon 2025+ themes: dispatch the theme's actual
+                  // CartLinesUpdateEvent (from @shopify/events -- the same
+                  // package cart-drawer-component, cart-items-component and
+                  // cart-icon.js import and listen for). Passing
+                  // detail.sections here is what lets cart-items-component
+                  // morph the real item row directly instead of falling back
+                  // to a self-fetch.
+                  // Deliberately NOT passing a cart field here -- doing so
+                  // once (a raw /cart.js blob, legacy items shape) crashed
+                  // every single listener's shared internal promise handling
+                  // in the shopify events module itself (TypeError reading
+                  // map, confirmed live in cart-icon.js, header-actions.js,
+                  // cart-drawer.js and component-cart-items.js all at once,
+                  // before any of their own logic ran). That library expects
+                  // its own newer Cart shape there, not the Ajax API's.
+                  // detail.itemCount alone is what cart-icon.js actually
+                  // reads, so there is nothing lost by leaving cart out.
+                  var CartLinesUpdateEvent = mod && mod.CartLinesUpdateEvent;
+                  if (CartLinesUpdateEvent) {
+                    document.dispatchEvent(new CartLinesUpdateEvent({
+                      action: 'add',
+                      context: 'cart',
+                      lines: [{ id: String(variantId), quantity: 1 }],
+                      promise: Promise.resolve({
+                        detail: {
+                          sections: sectionsHtml || undefined,
+                          itemCount: itemCount,
+                          source: 'wishkeeper-wishlist',
+                          didError: false
+                        }
+                      })
+                    }));
+                  }
+
+                  // Non-Horizon themes: generic event some other themes
+                  // listen for. Fully decoupled from the dispatch above.
+                  document.dispatchEvent(new CustomEvent('cart:update', {
+                    bubbles: true,
+                    detail: { data: { itemCount: itemCount, source: 'wishkeeper-wishlist' } }
+                  }));
+                });
               }).catch(function () {});
 
               // Icon updates first (matches the store's native pacing: the

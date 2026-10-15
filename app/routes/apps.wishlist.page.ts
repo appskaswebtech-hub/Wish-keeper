@@ -845,53 +845,36 @@
               res.json().then(function (addResult) {
                 var sectionsHtml = addResult && addResult.sections;
 
-                // /cart/add.js's response describes only the line item that
-                // was just added (id, variant_id, quantity, ...) -- it has no
-                // cart-wide item_count field at all, unlike /cart.js. Reading
-                // addResult.item_count was always undefined, which is why
-                // cart-icon.js's bubble went visible-but-blank: itemCount
-                // undefined fails its ===0 check (so "hidden" gets removed)
-                // but also fails its <100 check (so the text is set to '').
-                // Fetching the real cart here gives it an actual number.
-                fetch('/cart.js?_=' + Date.now())
-                  .then(function (r) { return r.ok ? r.json() : null; })
-                  .then(function (cart) {
-                    var itemCount = cart ? cart.item_count : undefined;
+                // Horizon 2025+ themes: dispatch the theme's actual
+                // CartLinesUpdateEvent (from @shopify/events -- the same
+                // package cart-drawer-component and cart-items-component
+                // import and listen for). Passing detail.sections here is
+                // what lets cart-items-component morph the real item row
+                // directly instead of falling back to a self-fetch.
+                import('@shopify/events').then(function (mod) {
+                  var CartLinesUpdateEvent = mod && mod.CartLinesUpdateEvent;
+                  if (!CartLinesUpdateEvent) return;
+                  document.dispatchEvent(new CartLinesUpdateEvent({
+                    action: 'add',
+                    context: 'cart',
+                    lines: [{ id: String(variantId), quantity: 1 }],
+                    promise: Promise.resolve({
+                      detail: {
+                        sections: sectionsHtml || undefined,
+                        itemCount: addResult ? addResult.item_count : undefined,
+                        source: 'wishkeeper-wishlist',
+                        didError: false
+                      }
+                    })
+                  }));
+                }).catch(function (e) { console.error('[wl] CartLinesUpdateEvent dispatch failed', e); });
 
-                    // Horizon 2025+ themes: dispatch the theme's actual
-                    // CartLinesUpdateEvent (from @shopify/events -- the same
-                    // package cart-drawer-component, cart-items-component and
-                    // cart-icon.js import and listen for). Passing
-                    // detail.sections here is what lets cart-items-component
-                    // morph the real item row directly instead of falling
-                    // back to a self-fetch.
-                    import('@shopify/events').then(function (mod) {
-                      var CartLinesUpdateEvent = mod && mod.CartLinesUpdateEvent;
-                      if (!CartLinesUpdateEvent) return;
-                      document.dispatchEvent(new CartLinesUpdateEvent({
-                        action: 'add',
-                        context: 'cart',
-                        lines: [{ id: String(variantId), quantity: 1 }],
-                        promise: Promise.resolve({
-                          cart: cart || undefined,
-                          detail: {
-                            sections: sectionsHtml || undefined,
-                            itemCount: itemCount,
-                            source: 'wishkeeper-wishlist',
-                            didError: false
-                          }
-                        })
-                      }));
-                    }).catch(function (e) { console.error('[wl] CartLinesUpdateEvent dispatch failed', e); });
-
-                    // Non-Horizon themes: generic event some other themes
-                    // listen for. Fully decoupled from the dispatch above.
-                    document.dispatchEvent(new CustomEvent('cart:update', {
-                      bubbles: true,
-                      detail: { data: { itemCount: itemCount, source: 'wishkeeper-wishlist' } }
-                    }));
-                  })
-                  .catch(function () {});
+                // Non-Horizon themes: generic event some other themes listen
+                // for. Fully decoupled from the dispatch above.
+                document.dispatchEvent(new CustomEvent('cart:update', {
+                  bubbles: true,
+                  detail: { data: { itemCount: addResult ? addResult.item_count : undefined, source: 'wishkeeper-wishlist' } }
+                }));
               }).catch(function () {});
 
               // Icon updates first (matches the store's native pacing: the

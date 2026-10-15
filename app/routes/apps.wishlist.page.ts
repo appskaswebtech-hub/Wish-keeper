@@ -571,18 +571,16 @@
             });
           }
 
-          // Horizon's actual markup (confirmed via live inspection): <cart-icon>
-          // wraps a <div class="cart-bubble visually-hidden"> containing
-          // <span class="cart-bubble__text">. The bubble itself carries the
-          // visually-hidden class -- updating the text alone (the old
-          // ".cart-bubble__text-count" selector, which doesn't exist in this
-          // markup at all) left the count hidden even once set.
-          var horizonBubbleText = document.querySelector('.cart-bubble__text');
-          if (horizonBubbleText) horizonBubbleText.textContent = count;
-          var horizonBubble = document.querySelector('.cart-bubble');
-          if (horizonBubble) horizonBubble.classList.toggle('visually-hidden', count <= 0);
-          var horizonIcon = document.querySelector('cart-icon');
-          if (horizonIcon) horizonIcon.classList.toggle('header-actions__cart-icon--has-cart', count > 0);
+          // Horizon's own <cart-icon> component (cart-icon.js, confirmed via
+          // its real source) already listens for the same CartLinesUpdateEvent
+          // dispatched after a successful add (see addToCart below) and
+          // updates its bubble correctly on its own -- AND caches that count
+          // in sessionStorage, which it re-applies on every reconnect for up
+          // to 10 seconds. Manually touching .cart-bubble/.cart-bubble__text
+          // here bypassed that cache, so a later reconnect (e.g. after a
+          // native cart-drawer removal) silently overwrote our manual update
+          // with the stale cached value. Left untouched here so cart-icon's
+          // own handler stays the single source of truth.
 
           var els = document.querySelectorAll(
             '.cart-count-bubble, [data-cart-count], .cart-count, .CartCount, #cart-count, .cart__count, [data-header-cart-count], .header__cart-count, .cart-item-count'

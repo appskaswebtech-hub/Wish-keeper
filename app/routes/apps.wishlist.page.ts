@@ -568,8 +568,16 @@
             });
           }
 
-          var horizonCount = document.querySelector('.cart-bubble__text-count');
-          if (horizonCount) horizonCount.textContent = count;
+          // Horizon's actual markup (confirmed via live inspection): <cart-icon>
+          // wraps a <div class="cart-bubble visually-hidden"> containing
+          // <span class="cart-bubble__text">. The bubble itself carries the
+          // visually-hidden class -- updating the text alone (the old
+          // ".cart-bubble__text-count" selector, which doesn't exist in this
+          // markup at all) left the count hidden even once set.
+          var horizonBubbleText = document.querySelector('.cart-bubble__text');
+          if (horizonBubbleText) horizonBubbleText.textContent = count;
+          var horizonBubble = document.querySelector('.cart-bubble');
+          if (horizonBubble) horizonBubble.classList.toggle('visually-hidden', count <= 0);
           var horizonIcon = document.querySelector('cart-icon');
           if (horizonIcon) horizonIcon.classList.toggle('header-actions__cart-icon--has-cart', count > 0);
 

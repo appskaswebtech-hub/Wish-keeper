@@ -7,7 +7,7 @@ import { sendAlertEmail } from "./mailer.server";
 
 const SUPPORT_NOTIFY_EMAIL = "apps.kaswebtech@gmail.com";
 const AUTO_REPLY_TEXT =
-  "Thanks for reaching out! A support agent will be with you shortly -- feel free to add more detail in the meantime.";
+  "Thank you for messaging us! One of our support members will reach you soon.";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "support");
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB
@@ -84,6 +84,8 @@ export async function sendMessage(opts: {
   sender: "shop" | "admin";
   body?: string | null;
   file?: File | null;
+  name?: string | null;
+  email?: string | null;
 }) {
   const thread = await getOrCreateThread(opts.shop);
   const body = (opts.body || "").trim();
@@ -143,7 +145,12 @@ export async function sendMessage(opts: {
   // fire-and-forget: this must never block or fail sending the merchant's
   // own message just because the dashboard happens to be offline.
   if (opts.sender === "shop") {
-    notifyAdminDashboard(opts.shop, message).catch(() => {});
+    notifyAdminDashboard(
+      opts.shop,
+      message,
+      opts.name?.trim() || undefined,
+      opts.email?.trim() || undefined,
+    ).catch(() => {});
   }
 
   if (isConversationStart) {
@@ -237,14 +244,17 @@ async function notifyAdminDashboardReset(shop: string) {
   });
 }
 
-async function notifyAdminDashboard(shop: string, message: unknown) {
+// name/email come from the widget's intake form, which only sends them with
+// the opening message -- Supportly titles the conversation with the name and
+// shows both on that message.
+async function notifyAdminDashboard(shop: string, message: unknown, name?: string, email?: string) {
   const url = process.env.ADMIN_DASHBOARD_URL;
   const secret = process.env.SUPPORT_INTERNAL_SECRET;
   if (!url || !secret) return; // Dashboard not configured yet -- nothing to notify.
   await fetch(`${url.replace(/\/$/, "")}/internal/notify`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Internal-Secret": secret },
-    body: JSON.stringify({ shop, message }),
+    body: JSON.stringify({ shop, message, name, email }),
   });
 }
 

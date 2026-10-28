@@ -52,6 +52,14 @@ const WIDGET_CSS = `
 .wksc-newchat-btn{background:#b8922a;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:12.5px;font-weight:700;cursor:pointer}
 .wksc-newchat-btn:disabled{opacity:.6;cursor:not-allowed}
 .wksc-typing{font-style:italic;opacity:.65}
+.wksc-prechat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:#faf8f4}
+.wksc-prechat-title{font-weight:700;font-size:14px;color:#1a1612}
+.wksc-prechat-sub{font-size:12px;color:#6b7280;margin-top:-4px}
+.wksc-prechat input,.wksc-prechat textarea{border:1.5px solid #e5e0d6;border-radius:10px;padding:9px 11px;font:inherit;font-size:13px;outline:none;width:100%;box-sizing:border-box;background:#fff}
+.wksc-prechat input:focus,.wksc-prechat textarea:focus{border-color:#b8922a}
+.wksc-prechat textarea{resize:none;height:70px}
+.wksc-prechat-btn{background:#b8922a;color:#fff;border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:2px}
+.wksc-prechat-btn:disabled{opacity:.5;cursor:not-allowed}
 `;
 
 // Floating support chat, available on every /app/* page. Mounted once in
@@ -73,6 +81,12 @@ export default function SupportChatWidget() {
   const [adminTyping, setAdminTyping] = useState(false);
   const [ending, setEnding] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [contactName, setContactName] = useState<string>(() => {
+    try { return localStorage.getItem("wksc-contact-name") ?? ""; } catch { return ""; }
+  });
+  const [prechatName, setPrechatName] = useState("");
+  const [prechatEmail, setPrechatEmail] = useState("");
+  const [prechatMsg, setPrechatMsg] = useState("");
 
   const scrollToBottom = useCallback(() => {
     requestAnimationFrame(() => {
@@ -202,10 +216,47 @@ export default function SupportChatWidget() {
         // widget doesn't wait for the next poll to look fresh.
         setMessages([]);
         setClosed(false);
+        setContactName("");
+        try { localStorage.removeItem("wksc-contact-name"); } catch {}
+        setPrechatName(""); setPrechatEmail(""); setPrechatMsg("");
       })
       .catch(() => {})
       .finally(() => setStarting(false));
   }, [starting]);
+
+  const submitPrechat = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const name = prechatName.trim();
+    const email = prechatEmail.trim();
+    const body = prechatMsg.trim();
+    if (!name || !email || !body || sending) return;
+    setSending(true);
+    setErr(null);
+
+    const form = new FormData();
+    form.set("body", body);
+    form.set("name", name);
+    form.set("email", email);
+
+    fetch("/app/support/messages", { method: "POST", body: form })
+      .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (!ok) {
+          setErr(d?.error || "Could not send message.");
+          return;
+        }
+        setMessages((prev) => (prev.some((m) => m.id === d.message.id) ? prev : [...prev, d.message]));
+        setContactName(name);
+        try { localStorage.setItem("wksc-contact-name", name); } catch {}
+        scrollToBottom();
+      })
+      .catch(() => setErr("Could not send message. Check your connection."))
+      .finally(() => setSending(false));
+  }, [prechatName, prechatEmail, prechatMsg, sending, scrollToBottom]);
+
+  // Gated on `loaded` so an existing conversation doesn't flash the form
+  // before the first fetch comes back.
+  const showPreChat = loaded && messages.length === 0 && !contactName && !closed;
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -248,6 +299,40 @@ export default function SupportChatWidget() {
             </div>
           </div>
 
+          {showPreChat ? (
+            <form className="wksc-prechat" onSubmit={submitPrechat}>
+              <div className="wksc-prechat-title">How can we help?</div>
+              <div className="wksc-prechat-sub">Fill in your details and we'll get back to you shortly.</div>
+              {err && <div className="wksc-err">{err}</div>}
+              <input
+                placeholder="Your name *"
+                value={prechatName}
+                onChange={(e) => setPrechatName(e.target.value)}
+                required
+              />
+              <input
+                type="email"
+                placeholder="Email address *"
+                value={prechatEmail}
+                onChange={(e) => setPrechatEmail(e.target.value)}
+                required
+              />
+              <textarea
+                placeholder="Describe your issue *"
+                value={prechatMsg}
+                onChange={(e) => setPrechatMsg(e.target.value)}
+                required
+              />
+              <button
+                type="submit"
+                className="wksc-prechat-btn"
+                disabled={sending || !prechatName.trim() || !prechatEmail.trim() || !prechatMsg.trim()}
+              >
+                {sending ? "Sending..." : "Start Chat"}
+              </button>
+            </form>
+          ) : (
+            <>
           <div className="wksc-body" ref={listRef}>
             {loaded && messages.length === 0 && (
               <div className="wksc-empty">
@@ -335,6 +420,8 @@ export default function SupportChatWidget() {
               </>
             )}
           </div>
+            </>
+          )}
         </div>
       )}
     </>

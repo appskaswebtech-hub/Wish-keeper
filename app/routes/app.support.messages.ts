@@ -15,6 +15,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
   const body = formData.get("body");
   const file = formData.get("file");
+  const name = formData.get("name");
+  const email = formData.get("email");
 
   try {
     const message = await sendMessage({
@@ -22,6 +24,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       sender: "shop",
       body: typeof body === "string" ? body : null,
       file: file instanceof File ? file : null,
+      name: typeof name === "string" ? name : null,
+      email: typeof email === "string" ? email : null,
     });
     return data({ message });
   } catch (error) {

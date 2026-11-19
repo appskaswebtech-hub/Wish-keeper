@@ -1,3 +1,98 @@
+/* ── Shared WishKeeper runtime ─────────────────────────────────────────────
+   Identical in every block script; the first one to load installs it and the
+   rest reuse it. Before this existed each block fetched settings itself and
+   ran its own setInterval, so a theme with four blocks enabled made four
+   settings requests on load and ran four independent poll timers against the
+   app proxy. Everything here is per-page-load state only. */
+(function () {
+  if (window.__wlCore) return;
+  var core = {
+    // Background polling is OFF by default. Everything the merchant actually
+    // sees is already event-driven: add/remove updates the badge and every
+    // heart in this tab directly, and visibilitychange/pageshow re-sync from
+    // the server whenever the tab is focused again -- which covers changes
+    // made on another device. The only case a timer adds is two tabs visible
+    // side by side, which does not justify a request on every page forever.
+    // A store that wants it can set window.__wlPollMs (ms, 5s floor) before
+    // the block scripts load.
+    pollMs: Number(window.__wlPollMs) > 0 ? Math.max(5000, Number(window.__wlPollMs)) : 0,
+    _ticks: [],
+    _timer: null,
+    _settings: null,
+    _once: {},
+  };
+
+  // One settings request per page, shared by every block. Resolves to {} on
+  // failure, which each caller already handles (they all guard on d.settings).
+  core.settings = function (proxyUrl, shop) {
+    if (!core._settings) {
+      core._settings = fetch(
+        proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&action=settings"
+      )
+        .then(function (r) { return r.json(); })
+        .catch(function () { return {}; });
+    }
+    return core._settings;
+  };
+
+  // One timer for every block. Callbacks run only while the tab is visible,
+  // which is what each block's own interval used to check for itself.
+  core.onTick = function (fn) {
+    core._ticks.push(fn);
+    if (!core.pollMs) return; // polling disabled: focus/visibility only
+    if (core._timer) return;
+    core._timer = setInterval(function () {
+      if (document.visibilityState !== "visible") return;
+      for (var i = 0; i < core._ticks.length; i++) {
+        try { core._ticks[i](); } catch (e) {}
+      }
+    }, core.pollMs);
+  };
+
+  // Throttle for refocus re-syncs. Every block listens for visibilitychange,
+  // so one alt-tab used to cost a request from each of them, and rapid
+  // switching produced a burst. A shared window means the first block through
+  // refreshes and the rest -- and any switch within the window -- are no-ops.
+  core.refocusMs = 15000;
+  core._lastSync = 0;
+  core.shouldResync = function () {
+    var now = Date.now();
+    if (now - core._lastSync < core.refocusMs) return false;
+    core._lastSync = now;
+    return true;
+  };
+
+  // Small localStorage cache so the hearts and the badge can paint with the
+  // rest of the page instead of popping in after a proxy round trip. Values
+  // are painted immediately and then reconciled when the real response lands,
+  // so a stale entry is corrected within the same second. Never throws:
+  // private mode and blocked storage just mean no cache.
+  core.cacheGet = function (key, maxAgeMs) {
+    try {
+      var raw = localStorage.getItem("wl.c." + key);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (maxAgeMs && Date.now() - o.t > maxAgeMs) return null;
+      return o.v;
+    } catch (e) { return null; }
+  };
+  core.cacheSet = function (key, value) {
+    try {
+      localStorage.setItem("wl.c." + key, JSON.stringify({ t: Date.now(), v: value }));
+    } catch (e) {}
+  };
+
+  // Guard for work that must happen once per page even when a theme loads the
+  // same block twice (a desktop and a mobile header, typically).
+  core.once = function (key) {
+    if (core._once[key]) return false;
+    core._once[key] = true;
+    return true;
+  };
+
+  window.__wlCore = core;
+})();
+
 (function () {
 
   // ─── Toast ───────────────────────────────────────────────────────────────
@@ -78,8 +173,7 @@
     it: { add: "Aggiungi alla lista dei desideri", remove: "Rimuovi dalla lista dei desideri", addedToast: "Aggiunto alla lista dei desideri", removedToast: "Rimosso dalla lista dei desideri", choose: "Scegli un'opzione", soldOut: "Esaurito", cancel: "Annulla" }
   };
   if (PROXY && SHOP) {
-    fetch(PROXY + "/api/wishlist?shop=" + encodeURIComponent(SHOP) + "&action=settings")
-      .then(function (r) { return r.json(); })
+    window.__wlCore.settings(PROXY, SHOP)
       .then(function (d) {
         var lang = ((d.settings && d.settings.language) || '').split('-')[0].toLowerCase();
         if (collI18n[lang]) {
@@ -110,10 +204,22 @@
     }
   }
 
-  var wishlistedIds = new Set();
+  // Seeded from the last known server state so hearts can be drawn filled or
+  // empty immediately; the list response reconciles it a moment later.
+  var wishlistedIds = new Set(window.__wlCore.cacheGet("ids", 86400000) || []);
   // Every saved row (a product can be saved under several variants).
   var wishlistRows = [];
-  var productIdCache = {};
+  // handle -> product id. Seeded from localStorage because a product's id
+  // never changes, so after the first visit every card resolves synchronously
+  // and its heart is painted with the rest of the page rather than one
+  // /products/{handle}.json round trip per card later.
+  var productIdCache = window.__wlCore.cacheGet("pid") || {};
+  var productIdCacheDirty = false;
+  function persistProductIdCache() {
+    if (!productIdCacheDirty) return;
+    productIdCacheDirty = false;
+    window.__wlCore.cacheSet("pid", productIdCache);
+  }
 
   if (!document.getElementById("wl-coll-anim")) {
     var animStyle = document.createElement("style");
@@ -284,7 +390,14 @@
         if (seenContainers.has(container)) continue;
         seenContainers.add(container);
 
+        // Claim the container synchronously. The heart is only appended once
+        // getProductId's fetch resolves, so checking for .wl-heart-wrap alone
+        // lets two overlapping scans both pass this guard and append twice --
+        // the duplicate hearts themes see when they re-trigger a scan. The
+        // marker is cleared again if the card turns out to have no product id.
         if (container.querySelector('.wl-heart-wrap')) continue;
+        if (container.hasAttribute('data-wl-bound')) continue;
+        container.setAttribute('data-wl-bound', '1');
 
         var imgWrap = container.querySelector('.card__media, .card__inner, .product-card__image-wrapper, .card-media, .grid-product__image-wrap, .media, .card__image-wrapper, .product-thumbnail-media');
         if (!imgWrap) imgWrap = container.querySelector('img') ? container.querySelector('img').parentElement : null;
@@ -323,6 +436,8 @@
       .then(function (data) {
         if (data.product && data.product.id) {
           productIdCache[handle] = String(data.product.id);
+          productIdCacheDirty = true;
+          persistProductIdCache();
           callback(String(data.product.id));
         } else {
           callback(null);
@@ -697,18 +812,40 @@
   window.__wlWishlistedIds = wishlistedIds;
   window.__wlUpdateHeaderBadge = updateHeaderBadge;
 
+  // Paint hearts for every card we can resolve without waiting on anything.
+  // After the first visit the handle -> id map is in localStorage and the
+  // wishlisted ids are cached, so the hearts land with the page instead of a
+  // round trip later. State is reconciled from the server moments after.
+  function paintCardsNow(cards) {
+    cards.forEach(function (card) {
+      var productId = productIdCache[card.handle];
+      if (!productId) return;
+      if (card.container.querySelector(".wl-heart-wrap")) return;
+      var heart = createHeartButton(productId, wishlistedIds.has(productId));
+      var heartBtn = heart.querySelector(".wl-heart-btn");
+      if (heartBtn) heartBtn.setAttribute("data-wl-handle", card.handle);
+      card.container.appendChild(heart);
+    });
+  }
+
   function init() {
     var cards = findProductCards();
     fixOverlayLinks();
 
     if (cards.length === 0) return;
 
+    paintCardsNow(cards);
+
     fetch(PROXY + "/api/wishlist?shop=" + encodeURIComponent(SHOP) + "&customerId=" + encodeURIComponent(CUSTOMER_ID))
       .then(function (r) { return r.json(); })
       .catch(function () { return { wishlist: { items: [] }, hasActivePlan: true }; })
       .then(function (data) {
         var items = (data.wishlist && data.wishlist.items) || [];
+        // Rebuild rather than add: wishlistedIds was seeded from the cache,
+        // so anything removed elsewhere has to drop out here too.
+        wishlistedIds.clear();
         items.forEach(function (item) { wishlistedIds.add(item.productId); });
+        window.__wlCore.cacheSet("ids", Array.from(wishlistedIds));
         wishlistRows = items.map(function (item) { return { productId: item.productId, variantId: item.variantId || null }; });
 
         var planActive = data.hasActivePlan !== false;
@@ -737,6 +874,23 @@
 
         cards.forEach(function (card) {
           getProductId(card.handle, function (productId) {
+            if (!productId) {
+              // Keep the claim. Releasing it looks tempting -- a later scan
+              // could retry -- but the container would be picked up again by
+              // the very next DOM mutation, refetch the wishlist, fail the
+              // same way and release again, polling the proxy forever. A
+              // handle that resolves to no product (a "view all" tile, a
+              // non-product card) will not start resolving later anyway.
+              card.container.setAttribute('data-wl-bound', 'none');
+              return;
+            }
+            // paintCardsNow may already have drawn this heart from cache;
+            // only its active state can be out of date, so correct that
+            // rather than appending a second one.
+            if (card.container.querySelector(".wl-heart-wrap")) {
+              syncButtons(productId, wishlistedIds.has(productId));
+              return;
+            }
             if (productId) {
               var isActive = wishlistedIds.has(productId);
               var heart = createHeartButton(productId, isActive);
@@ -778,6 +932,7 @@
         wishlistRows = items.map(function (item) { return { productId: item.productId, variantId: item.variantId || null }; });
         wishlistedIds = freshIds;
         window.__wlWishlistedIds = wishlistedIds;
+        window.__wlCore.cacheSet("ids", Array.from(freshIds));
 
         var allBtns = document.querySelectorAll("[data-wl-product]");
         var seen = {};
@@ -797,28 +952,62 @@
   });
 
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible") resyncFromServer();
+    if (document.visibilityState === "visible" && window.__wlCore.shouldResync()) {
+      resyncFromServer();
+    }
   });
 
   // Keep hearts genuinely live: re-check the real wishlist state every few
   // seconds while this tab is open and visible, so changes made elsewhere
   // (another tab, the popup drawer, the product page) show up here without
   // requiring a manual refresh or navigation.
-  setInterval(function () {
-    if (document.visibilityState === "visible") resyncFromServer();
-  }, 6000);
+  if (window.__wlCore.once("collectionResyncTick")) {
+    window.__wlCore.onTick(resyncFromServer);
+  }
+
+  // Nodes this script adds itself, which must not count as "something new
+  // appeared" or the observer re-triggers on its own hearts and toasts.
+  function isOwnNode(node) {
+    if (node.nodeType !== 1) return true; // text nodes never carry a card
+    if (node.id === "wl-toast-tl") return true;
+    if (node.classList && node.classList.contains("wl-heart-wrap")) return true;
+    return !!(node.closest && node.closest(".wl-heart-wrap, #wl-toast-tl"));
+  }
 
   var observer = new MutationObserver(function (mutations) {
     var hasNew = false;
-    mutations.forEach(function (m) { if (m.addedNodes.length > 0) hasNew = true; });
+    for (var i = 0; i < mutations.length && !hasNew; i++) {
+      var added = mutations[i].addedNodes;
+      for (var j = 0; j < added.length; j++) {
+        if (!isOwnNode(added[j])) { hasNew = true; break; }
+      }
+    }
     if (hasNew) {
       clearTimeout(window.__wlObserverTimer);
       window.__wlObserverTimer = setTimeout(init, 500);
     }
   });
 
-  var productGrid = document.querySelector('.collection, .product-grid, #product-grid, main');
-  if (productGrid) observer.observe(productGrid, { childList: true, subtree: true });
+  // Watch the whole document, as wishlist-button.js and
+  // wishlist-custom-button.js already do. Scoping this to the first match of
+  // '.collection, .product-grid, #product-grid, main' missed cards that
+  // themes render into their own sections outside <main> -- Recently Viewed
+  // and Customers Also Bought typically -- and when nothing matched at load
+  // time there was no observer at all, silently and permanently.
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // Supported entry point for themes that inject product cards themselves.
+  // Rescanning is idempotent: findProductCards skips any container already
+  // carrying a heart or claimed by an in-flight scan, so calling refresh()
+  // more often than needed costs nothing and cannot duplicate a heart.
+  window.WishKeeper = window.WishKeeper || {};
+  window.WishKeeper.refresh = function () { init(); };
+  window.WishKeeper.isWishlisted = function (productId) {
+    return wishlistedIds.has(String(productId));
+  };
+  window.dispatchEvent(new CustomEvent("wishkeeper:ready", {
+    detail: { refresh: window.WishKeeper.refresh },
+  }));
 
 })();
 

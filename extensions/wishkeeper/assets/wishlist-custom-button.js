@@ -1,3 +1,98 @@
+/* ── Shared WishKeeper runtime ─────────────────────────────────────────────
+   Identical in every block script; the first one to load installs it and the
+   rest reuse it. Before this existed each block fetched settings itself and
+   ran its own setInterval, so a theme with four blocks enabled made four
+   settings requests on load and ran four independent poll timers against the
+   app proxy. Everything here is per-page-load state only. */
+(function () {
+  if (window.__wlCore) return;
+  var core = {
+    // Background polling is OFF by default. Everything the merchant actually
+    // sees is already event-driven: add/remove updates the badge and every
+    // heart in this tab directly, and visibilitychange/pageshow re-sync from
+    // the server whenever the tab is focused again -- which covers changes
+    // made on another device. The only case a timer adds is two tabs visible
+    // side by side, which does not justify a request on every page forever.
+    // A store that wants it can set window.__wlPollMs (ms, 5s floor) before
+    // the block scripts load.
+    pollMs: Number(window.__wlPollMs) > 0 ? Math.max(5000, Number(window.__wlPollMs)) : 0,
+    _ticks: [],
+    _timer: null,
+    _settings: null,
+    _once: {},
+  };
+
+  // One settings request per page, shared by every block. Resolves to {} on
+  // failure, which each caller already handles (they all guard on d.settings).
+  core.settings = function (proxyUrl, shop) {
+    if (!core._settings) {
+      core._settings = fetch(
+        proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&action=settings"
+      )
+        .then(function (r) { return r.json(); })
+        .catch(function () { return {}; });
+    }
+    return core._settings;
+  };
+
+  // One timer for every block. Callbacks run only while the tab is visible,
+  // which is what each block's own interval used to check for itself.
+  core.onTick = function (fn) {
+    core._ticks.push(fn);
+    if (!core.pollMs) return; // polling disabled: focus/visibility only
+    if (core._timer) return;
+    core._timer = setInterval(function () {
+      if (document.visibilityState !== "visible") return;
+      for (var i = 0; i < core._ticks.length; i++) {
+        try { core._ticks[i](); } catch (e) {}
+      }
+    }, core.pollMs);
+  };
+
+  // Throttle for refocus re-syncs. Every block listens for visibilitychange,
+  // so one alt-tab used to cost a request from each of them, and rapid
+  // switching produced a burst. A shared window means the first block through
+  // refreshes and the rest -- and any switch within the window -- are no-ops.
+  core.refocusMs = 15000;
+  core._lastSync = 0;
+  core.shouldResync = function () {
+    var now = Date.now();
+    if (now - core._lastSync < core.refocusMs) return false;
+    core._lastSync = now;
+    return true;
+  };
+
+  // Small localStorage cache so the hearts and the badge can paint with the
+  // rest of the page instead of popping in after a proxy round trip. Values
+  // are painted immediately and then reconciled when the real response lands,
+  // so a stale entry is corrected within the same second. Never throws:
+  // private mode and blocked storage just mean no cache.
+  core.cacheGet = function (key, maxAgeMs) {
+    try {
+      var raw = localStorage.getItem("wl.c." + key);
+      if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (maxAgeMs && Date.now() - o.t > maxAgeMs) return null;
+      return o.v;
+    } catch (e) { return null; }
+  };
+  core.cacheSet = function (key, value) {
+    try {
+      localStorage.setItem("wl.c." + key, JSON.stringify({ t: Date.now(), v: value }));
+    } catch (e) {}
+  };
+
+  // Guard for work that must happen once per page even when a theme loads the
+  // same block twice (a desktop and a mobile header, typically).
+  core.once = function (key) {
+    if (core._once[key]) return false;
+    core._once[key] = true;
+    return true;
+  };
+
+  window.__wlCore = core;
+})();
+
 (function () {
   var LOG = "[WL CUSTOM DEBUG]";
   var registry = []; // { btn, productId, refreshState }
@@ -428,11 +523,7 @@
     // to pick up any button matched from the pasted HTML.
     scan();
 
-    var settingsUrl = proxyUrl + "/api/wishlist?shop=" + encodeURIComponent(shop) + "&action=settings";
-    fetch(settingsUrl)
-      .then(function (r) {
-        return r.json();
-      })
+    window.__wlCore.settings(proxyUrl, shop)
       .then(function (d) {
         hasActivePlan = d.hasActivePlan !== false;
         if (d.settings) {
@@ -503,7 +594,7 @@
   });
 
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible") {
+    if (document.visibilityState === "visible" && window.__wlCore.shouldResync()) {
       registry.forEach(function (entry) { entry.refreshState(); });
     }
   });

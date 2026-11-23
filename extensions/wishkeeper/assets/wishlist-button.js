@@ -312,7 +312,9 @@
               es: { add: "Añadir a la lista de deseos", remove: "Eliminar de la lista de deseos", added: "En la lista de deseos", addedToast: "Añadido a la lista de deseos", removedToast: "Eliminado de la lista de deseos" },
               fr: { add: "Ajouter à la liste de souhaits", remove: "Retirer de la liste de souhaits", added: "Dans la liste de souhaits", addedToast: "Ajouté à la liste de souhaits", removedToast: "Retiré de la liste de souhaits" },
               it: { add: "Aggiungi alla lista dei desideri", remove: "Rimuovi dalla lista dei desideri", added: "Nella lista dei desideri", addedToast: "Aggiunto alla lista dei desideri", removedToast: "Rimosso dalla lista dei desideri" },
-              ja: { add: "お気に入りに追加", remove: "お気に入りから削除", added: "お気に入りに登録済み", addedToast: "お気に入りに追加しました", removedToast: "お気に入りから削除しました" }
+              ja: { add: "お気に入りに追加", remove: "お気に入りから削除", added: "お気に入りに登録済み", addedToast: "お気に入りに追加しました", removedToast: "お気に入りから削除しました" },
+              ko: { add: "위시리스트에 추가", remove: "위시리스트에서 삭제", added: "위시리스트에 있음", addedToast: "위시리스트에 추가되었습니다", removedToast: "위시리스트에서 삭제되었습니다" },
+              zh: { add: "添加到心愿单", remove: "从心愿单移除", added: "已在心愿单中", addedToast: "已添加到心愿单", removedToast: "已从心愿单移除" }
             };
             var lang = window.__wlCore.lang(d.settings.language);
             if (btnI18n[lang]) {

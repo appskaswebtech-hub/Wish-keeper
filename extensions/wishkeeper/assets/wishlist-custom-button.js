@@ -123,7 +123,9 @@
     es: { addedToast: "Añadido a la lista de deseos", removedToast: "Eliminado de la lista de deseos" },
     fr: { addedToast: "Ajouté à la liste de souhaits", removedToast: "Retiré de la liste de souhaits" },
     it: { addedToast: "Aggiunto alla lista dei desideri", removedToast: "Rimosso dalla lista dei desideri" },
-    ja: { addedToast: "お気に入りに追加しました", removedToast: "お気に入りから削除しました" }
+    ja: { addedToast: "お気に入りに追加しました", removedToast: "お気に入りから削除しました" },
+    ko: { addedToast: "위시리스트에 추가되었습니다", removedToast: "위시리스트에서 삭제되었습니다" },
+    zh: { addedToast: "已添加到心愿单", removedToast: "已从心愿单移除" }
   };
   var TEXT_ADDED_TOAST = "Added to Wishlist";
   var TEXT_REMOVED_TOAST = "Removed from Wishlist";

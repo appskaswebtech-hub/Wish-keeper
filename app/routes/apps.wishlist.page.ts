@@ -238,6 +238,42 @@
         clearedToast: "お気に入りリストを空にしました",
         signInHint: "ログインすると、すべてのデバイスでお気に入りリストを利用でき、在庫わずか・再入荷・値下げのお知らせを受け取れます。"
       },
+      ko: {
+        title: "위시리스트", loading: "로딩 중...", loadingList: "위시리스트를 불러오는 중...",
+        share: "공유", addToCart: "장바구니에 담기", soldOut: "품절",
+        adding: "추가 중...", added: "추가되었습니다!", error: "오류",
+        removed: "위시리스트에서 삭제되었습니다", addedToCart: "장바구니에 담았습니다",
+        emptyTitle: "위시리스트가 비어 있습니다",
+        emptyText: "컬렉션을 둘러보고 마음에 드는 상품의 하트 아이콘을 눌러 저장하세요.",
+        startShopping: "쇼핑 시작하기", couldNotLoad: "위시리스트를 불러오지 못했습니다. 다시 시도해 주세요.",
+        // Korean has no plural form and the counter follows the number.
+        items: function(n) { return n + "개"; },
+        loaderText: "위시리스트", loadMore: "더 보기", removeLabel: "삭제",
+        shownCount: function(s, t) { return t + "개 중 " + s + "개 표시"; },
+        addAllToCart: "전체 장바구니에 담기", clearWishlist: "위시리스트 비우기", addingAll: "추가 중...",
+        confirmClear: "위시리스트의 모든 상품을 삭제하시겠습니까? 되돌릴 수 없습니다.",
+        clearedToast: "위시리스트를 비웠습니다",
+        signInHint: "로그인하면 모든 기기에서 위시리스트를 이용하고 재고 부족, 재입고, 가격 인하 알림을 받을 수 있습니다."
+      },
+      // Simplified Chinese. The locale's region is stripped before lookup, so
+      // zh-TW and zh-HK resolve here as well; add a separate map if
+      // Traditional Chinese is ever required.
+      zh: {
+        title: "心愿单", loading: "加载中...", loadingList: "正在加载您的心愿单...",
+        share: "分享", addToCart: "加入购物车", soldOut: "已售罄",
+        adding: "添加中...", added: "已添加！", error: "错误",
+        removed: "已从心愿单移除", addedToCart: "已加入购物车",
+        emptyTitle: "您的心愿单是空的",
+        emptyText: "浏览我们的商品，点击喜欢的商品上的爱心图标即可保存到这里。",
+        startShopping: "开始购物", couldNotLoad: "无法加载您的心愿单，请重试。",
+        items: function(n) { return n + "件商品"; },
+        loaderText: "我的心愿单", loadMore: "加载更多", removeLabel: "移除",
+        shownCount: function(s, t) { return "显示 " + s + " / " + t + " 件商品"; },
+        addAllToCart: "全部加入购物车", clearWishlist: "清空心愿单", addingAll: "全部添加中...",
+        confirmClear: "确定要移除心愿单中的所有商品吗？此操作无法撤销。",
+        clearedToast: "心愿单已清空",
+        signInHint: "登录后即可在所有设备上查看心愿单，并接收库存不足、补货和降价提醒。"
+      },
       en: {
         title: "My Wishlist", loading: "Loading...", loadingList: "Loading your wishlist...",
         share: "Share", addToCart: "ADD TO CART", soldOut: "SOLD OUT",

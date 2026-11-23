@@ -188,7 +188,8 @@
     de: { add: "Zur Wunschliste hinzufügen", remove: "Von der Wunschliste entfernen", addedToast: "Zur Wunschliste hinzugefügt", removedToast: "Von der Wunschliste entfernt", choose: "Option wählen", soldOut: "Ausverkauft", cancel: "Abbrechen" },
     es: { add: "Añadir a la lista de deseos", remove: "Eliminar de la lista de deseos", addedToast: "Añadido a la lista de deseos", removedToast: "Eliminado de la lista de deseos", choose: "Elige una opción", soldOut: "Agotado", cancel: "Cancelar" },
     fr: { add: "Ajouter à la liste de souhaits", remove: "Retirer de la liste de souhaits", addedToast: "Ajouté à la liste de souhaits", removedToast: "Retiré de la liste de souhaits", choose: "Choisissez une option", soldOut: "Épuisé", cancel: "Annuler" },
-    it: { add: "Aggiungi alla lista dei desideri", remove: "Rimuovi dalla lista dei desideri", addedToast: "Aggiunto alla lista dei desideri", removedToast: "Rimosso dalla lista dei desideri", choose: "Scegli un'opzione", soldOut: "Esaurito", cancel: "Annulla" }
+    it: { add: "Aggiungi alla lista dei desideri", remove: "Rimuovi dalla lista dei desideri", addedToast: "Aggiunto alla lista dei desideri", removedToast: "Rimosso dalla lista dei desideri", choose: "Scegli un'opzione", soldOut: "Esaurito", cancel: "Annulla" },
+    ja: { add: "お気に入りに追加", remove: "お気に入りから削除", addedToast: "お気に入りに追加しました", removedToast: "お気に入りから削除しました", choose: "オプションを選択", soldOut: "売り切れ", cancel: "キャンセル" }
   };
   if (PROXY && SHOP) {
     window.__wlCore.settings(PROXY, SHOP)

@@ -115,6 +115,19 @@
   var LOG = "[WL CUSTOM DEBUG]";
   var registry = []; // { btn, productId, refreshState }
 
+  // This block had no translations at all, so its toast stayed English even
+  // on a storefront serving every other string in Spanish. Defaults are the
+  // English wording it always used, replaced once settings resolve.
+  var customI18n = {
+    de: { addedToast: "Zur Wunschliste hinzugefügt", removedToast: "Von der Wunschliste entfernt" },
+    es: { addedToast: "Añadido a la lista de deseos", removedToast: "Eliminado de la lista de deseos" },
+    fr: { addedToast: "Ajouté à la liste de souhaits", removedToast: "Retiré de la liste de souhaits" },
+    it: { addedToast: "Aggiunto alla lista dei desideri", removedToast: "Rimosso dalla lista dei desideri" },
+    ja: { addedToast: "お気に入りに追加しました", removedToast: "お気に入りから削除しました" }
+  };
+  var TEXT_ADDED_TOAST = "Added to Wishlist";
+  var TEXT_REMOVED_TOAST = "Removed from Wishlist";
+
   // ─── Toast (same look as the built-in wishlist button) ─────────────────────
   function wlToast(message, type, imgUrl, productName) {
     var containerId = "wl-toast-tl";
@@ -500,7 +513,7 @@
             var imgSrc = imgEl ? imgEl.src : null;
             var productName = titleEl ? titleEl.textContent.trim() : null;
             wlToast(
-              action === "add" ? "Added to Wishlist" : "Removed from Wishlist",
+              action === "add" ? TEXT_ADDED_TOAST : TEXT_REMOVED_TOAST,
               action === "add" ? "add" : "remove",
               imgSrc,
               productName
@@ -544,6 +557,11 @@
     window.__wlCore.settings(proxyUrl, shop)
       .then(function (d) {
         hasActivePlan = d.hasActivePlan !== false;
+        var lang = window.__wlCore.lang(d.settings && d.settings.language);
+        if (customI18n[lang]) {
+          TEXT_ADDED_TOAST = customI18n[lang].addedToast;
+          TEXT_REMOVED_TOAST = customI18n[lang].removedToast;
+        }
         if (d.settings) {
           var iconColor = d.settings.customIconColor || d.settings.activeColor;
           if (iconColor) {

@@ -132,7 +132,12 @@
       shop: ${JSON.stringify(shop)},
       proxyUrl: "/apps/wishlist",
       customerId: ${JSON.stringify(loggedInCustomerId)} || localStorage.getItem("wishlist_guest_id"),
-      locale: "en",
+      // Shopify renders this response as Liquid (application/liquid), so it
+      // fills in the locale the shopper is actually browsing in. It used to
+      // be hardcoded "en", which made the detected-locale branch below dead.
+      // The embed view is plain HTML, where Liquid does not run, so fall back
+      // to the <html lang> the theme rendered.
+      locale: ${isEmbed ? `(document.documentElement.getAttribute("lang") || "en")` : `"{{ request.locale.iso_code }}"`},
       language: ${JSON.stringify(language)},
       isEmbed: ${JSON.stringify(isEmbed)}
     };
@@ -144,7 +149,11 @@
     var customerId = window.__wlPageConfig && window.__wlPageConfig.customerId;
     var merchantLanguage = window.__wlPageConfig && window.__wlPageConfig.language;
     var detectedLocale = (window.__wlPageConfig && window.__wlPageConfig.locale) || 'en';
-    var locale = ((merchantLanguage || detectedLocale) + '').split('-')[0].toLowerCase();
+    // The shopper's own locale wins over the merchant's store-wide setting:
+    // a store with Markets translations serves many locales but holds only
+    // one setting value, so preferring the setting left every shopper
+    // reading the same language. Matches core.lang() in the block scripts.
+    var locale = ((detectedLocale || merchantLanguage) + '').split('-')[0].toLowerCase();
     var isEmbedView = !!(window.__wlPageConfig && window.__wlPageConfig.isEmbed);
 
     var translations = {
@@ -211,6 +220,23 @@
         confirmClear: "Retirer tous les articles de votre liste de souhaits ? Cette action est irréversible.",
         clearedToast: "Liste de souhaits vidée",
         signInHint: "Connectez-vous pour accéder à votre liste de souhaits sur tous vos appareils et recevoir des alertes de stock faible, de réapprovisionnement et de baisse de prix."
+      },
+      ja: {
+        title: "お気に入りリスト", loading: "読み込み中...", loadingList: "お気に入りリストを読み込んでいます...",
+        share: "シェア", addToCart: "カートに追加", soldOut: "売り切れ",
+        adding: "追加中...", added: "追加しました！", error: "エラー",
+        removed: "お気に入りから削除しました", addedToCart: "カートに追加しました",
+        emptyTitle: "お気に入りリストは空です",
+        emptyText: "コレクションを見て、気になる商品のハートアイコンをタップすると、ここに保存されます。",
+        startShopping: "買い物を始める", couldNotLoad: "お気に入りリストを読み込めませんでした。もう一度お試しください。",
+        // Japanese has no plural form, and the counter goes after the number.
+        items: function(n) { return n + "点"; },
+        loaderText: "お気に入りリスト", loadMore: "もっと見る", removeLabel: "削除",
+        shownCount: function(s, t) { return t + "点中" + s + "点を表示"; },
+        addAllToCart: "すべてカートに追加", clearWishlist: "リストを空にする", addingAll: "追加中...",
+        confirmClear: "お気に入りリストからすべての商品を削除しますか？この操作は取り消せません。",
+        clearedToast: "お気に入りリストを空にしました",
+        signInHint: "ログインすると、すべてのデバイスでお気に入りリストを利用でき、在庫わずか・再入荷・値下げのお知らせを受け取れます。"
       },
       en: {
         title: "My Wishlist", loading: "Loading...", loadingList: "Loading your wishlist...",

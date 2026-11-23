@@ -9,6 +9,7 @@ import {
   mergeGuestWishlist,
   getWishlistCount,
   getStoreSettingsByShop,
+  toPublicSettings,
   clearWishlist,
 } from "../services/wishlist.server";
 import { seedProductWatch } from "../services/productWatch.server";
@@ -33,7 +34,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   if (action === "settings") {
-    const settings = await getStoreSettingsByShop(shop);
+    const settings = toPublicSettings(await getStoreSettingsByShop(shop));
     const plan = await prisma.shopPlan.findFirst({ where: { shop, status: "active" } });
     const hasActivePlan = !!plan;
     return data({ settings, hasActivePlan }, { headers: cors });

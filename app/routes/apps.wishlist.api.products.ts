@@ -4,6 +4,7 @@ import {
   getStoreByShop,
   getWishlistReadOnly,
   getStoreSettingsByShop,
+  toPublicSettings,
 } from "../services/wishlist.server";
 
 const cors = {
@@ -28,6 +29,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const settings = await getStoreSettingsByShop(shop);
   const storefrontToken = settings?.storefrontToken;
+  // Never return the raw row: it carries SMTP credentials and the
+  // storefrontToken, and this endpoint is public.
+  const publicSettings = toPublicSettings(settings);
 
   if (!storefrontToken) {
     return dataResponse({ error: "Storefront token not configured" }, { status: 401, headers: cors });
@@ -36,7 +40,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const wishlist = await getWishlistReadOnly(store.id, customerId);
 
   if (!wishlist.items.length) {
-    return dataResponse({ items: [], settings }, { headers: cors });
+    return dataResponse({ items: [], settings: publicSettings }, { headers: cors });
   }
 
   const productGids = wishlist.items.map((item) =>
@@ -98,7 +102,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
     if (result.errors) {
       console.error("Storefront GraphQL errors:", JSON.stringify(result.errors));
-      return dataResponse({ error: "GraphQL error", items: [], settings }, { status: 500, headers: cors });
+      return dataResponse({ error: "GraphQL error", items: [], settings: publicSettings }, { status: 500, headers: cors });
     }
 
     const nodes = result?.data?.nodes || [];
@@ -169,9 +173,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       };
     });
 
-    return dataResponse({ items: enrichedItems, settings }, { headers: cors });
+    return dataResponse({ items: enrichedItems, settings: publicSettings }, { headers: cors });
   } catch (error: any) {
     console.error("Storefront API error:", error);
-    return dataResponse({ error: "Failed to fetch product data", items: [], settings }, { status: 500, headers: cors });
+    return dataResponse({ error: "Failed to fetch product data", items: [], settings: publicSettings }, { status: 500, headers: cors });
   }
 };

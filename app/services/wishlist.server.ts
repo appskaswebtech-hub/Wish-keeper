@@ -665,3 +665,48 @@ export async function getAllWishlists(storeId: string, page = 1, limit = 20, sin
   return { wishlists, total, page, totalPages: Math.ceil(total / limit) };
 }
 
+
+/**
+ * The subset of StoreSettings that is safe to hand to a storefront.
+ *
+ * The wishlist API routes under /apps/wishlist are public: no session, no
+ * customer required, anyone can open the URL. The settings row also holds the
+ * merchant's SMTP credentials -- smtpPassword is stored in plain text -- and
+ * their storefrontToken, so returning the row as fetched published those to
+ * the world. A merchant reported it before configuring SMTP, so nothing had
+ * leaked yet.
+ *
+ * This is an allowlist on purpose: a column added to StoreSettings later is
+ * private by default, rather than silently becoming public.
+ */
+export function toPublicSettings(
+  s: Awaited<ReturnType<typeof getStoreSettingsByShop>>,
+) {
+  if (!s) return null;
+  return {
+    language: s.language,
+    showShareButton: s.showShareButton,
+    showItemCount: s.showItemCount,
+    maxItemsPerList: s.maxItemsPerList,
+    showTitle: s.showTitle,
+    showPrice: s.showPrice,
+    showAddToCart: s.showAddToCart,
+    showVendor: s.showVendor,
+    gridColumns: s.gridColumns,
+    iconStyle: s.iconStyle,
+    activeColor: s.activeColor,
+    headerIconEnabled: s.headerIconEnabled,
+    customCss: s.customCss,
+    loadingIcon: s.loadingIcon,
+    notAddedIcon: s.notAddedIcon,
+    addedIcon: s.addedIcon,
+    loadingIconColor: s.loadingIconColor,
+    customIconSvg: s.customIconSvg,
+    customIconColor: s.customIconColor,
+    buttonDisplayMode: s.buttonDisplayMode,
+    buttonText: s.buttonText,
+    buttonIconPosition: s.buttonIconPosition,
+    customWishlistButtonHtml: s.customWishlistButtonHtml,
+    wishlistDisplayMode: s.wishlistDisplayMode,
+  };
+}

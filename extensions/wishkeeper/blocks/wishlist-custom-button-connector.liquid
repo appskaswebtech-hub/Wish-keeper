@@ -10,7 +10,10 @@
     shop: {{ shop.permanent_domain | json }},
     proxyUrl: {{ shop.url | json }} + "/apps/wishlist",
     customerId: {{ customer.id | json }},
-    selector: {{ block.settings.selector | json }}
+    selector: {{ block.settings.selector | json }},
+    // The locale the shopper is actually browsing in, so the widget follows
+    // the storefront language instead of one store-wide setting.
+    locale: {{ request.locale.iso_code | json }}
   };
 </script>
 <script src="{{ 'wishlist-custom-button.js' | asset_url }}" defer></script>

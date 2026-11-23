@@ -62,6 +62,24 @@
     return true;
   };
 
+  // Which language the widget should speak. The shopper browsing /es/ is the
+  // authority, not the store-wide setting: a store using Shopify Markets
+  // translations has many locales but only one setting value, so following
+  // the setting alone left Spanish shoppers reading English toasts. Order:
+  // the locale Liquid passed in, then the <html lang> the theme rendered,
+  // then the merchant setting, then English.
+  core.lang = function (settingsLanguage) {
+    var fromConfig =
+      (window.__wlCollectionConfig && window.__wlCollectionConfig.locale) ||
+      (window.__wlHeaderConfig && window.__wlHeaderConfig.locale) ||
+      (window.__wlCustomBtnConfig && window.__wlCustomBtnConfig.locale) ||
+      (window.__wlBtnConfig && window.__wlBtnConfig.locale) || "";
+    var fromHtml = "";
+    try { fromHtml = document.documentElement.getAttribute("lang") || ""; } catch (e) {}
+    var pick = fromConfig || fromHtml || settingsLanguage || "";
+    return String(pick).split("-")[0].toLowerCase();
+  };
+
   // Small localStorage cache so the hearts and the badge can paint with the
   // rest of the page instead of popping in after a proxy round trip. Values
   // are painted immediately and then reconciled when the real response lands,
@@ -175,7 +193,7 @@
   if (PROXY && SHOP) {
     window.__wlCore.settings(PROXY, SHOP)
       .then(function (d) {
-        var lang = ((d.settings && d.settings.language) || '').split('-')[0].toLowerCase();
+        var lang = window.__wlCore.lang(d.settings && d.settings.language);
         if (collI18n[lang]) {
           TEXT_ADD = collI18n[lang].add;
           TEXT_REMOVE = collI18n[lang].remove;

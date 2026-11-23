@@ -4,7 +4,7 @@ export const PLANS = {
     pro: {
         name: "pro",
         displayName: "Pro Plan",
-        price: 9.99,
+        price: 3.0,
         interval: "EVERY_30_DAYS" as const,
         trialDays: 7,
         features: [

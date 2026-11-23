@@ -400,7 +400,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);ove
           <div class="pricing-label">Pro</div>
           <div class="pricing-price-row">
             <span class="pricing-currency">$</span>
-            <span class="pricing-amount">9.99</span>
+            <span class="pricing-amount">3</span>
             <span class="pricing-period">/ month</span>
           </div>
           <div class="pricing-trial">7-day free trial</div>
